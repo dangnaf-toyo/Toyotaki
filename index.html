@@ -208,7 +208,7 @@
         <div class="chart-box wide"><canvas id="chartGHDH"></canvas></div>
         <div class="comment-box">
           <div class="comment-label"><span class="dot"></span>Ghi chú / Comment tháng hiện tại<span class="src">đồng bộ từ Google Sheet · tab Comments</span></div>
-          <div class="comment-edit" id="cmt-giaohang" contenteditable="true" data-placeholder="Nhập nhận xét về tình hình giao hàng..."></div>
+          <div class="comment-edit" id="cmt-giaohang" contenteditable="true" spellcheck="false" data-placeholder="Nhập nhận xét về tình hình giao hàng..."></div>
         </div>
       </div>
     </section>
@@ -230,7 +230,7 @@
           <div class="chart-box"><canvas id="chartDuc"></canvas></div>
           <div class="comment-box">
             <div class="comment-label"><span class="dot"></span>Ghi chú / Comment<span class="src">Google Sheet</span></div>
-            <div class="comment-edit" id="cmt-duc" contenteditable="true" data-placeholder="Nhập nhận xét..."></div>
+            <div class="comment-edit" id="cmt-duc" contenteditable="true" spellcheck="false" data-placeholder="Nhập nhận xét..."></div>
           </div>
         </div>
         <div class="card">
@@ -239,7 +239,7 @@
           <div class="chart-box"><canvas id="chartBavia"></canvas></div>
           <div class="comment-box">
             <div class="comment-label"><span class="dot"></span>Ghi chú / Comment<span class="src">Google Sheet</span></div>
-            <div class="comment-edit" id="cmt-bavia" contenteditable="true" data-placeholder="Nhập nhận xét..."></div>
+            <div class="comment-edit" id="cmt-bavia" contenteditable="true" spellcheck="false" data-placeholder="Nhập nhận xét..."></div>
           </div>
         </div>
         <div class="card">
@@ -248,7 +248,7 @@
           <div class="chart-box"><canvas id="chartGiaCong"></canvas></div>
           <div class="comment-box">
             <div class="comment-label"><span class="dot"></span>Ghi chú / Comment<span class="src">Google Sheet</span></div>
-            <div class="comment-edit" id="cmt-giacong" contenteditable="true" data-placeholder="Nhập nhận xét..."></div>
+            <div class="comment-edit" id="cmt-giacong" contenteditable="true" spellcheck="false" data-placeholder="Nhập nhận xét..."></div>
           </div>
         </div>
         <div class="card">
@@ -257,7 +257,7 @@
           <div class="chart-box"><canvas id="chartSon"></canvas></div>
           <div class="comment-box">
             <div class="comment-label"><span class="dot"></span>Ghi chú / Comment<span class="src">Google Sheet</span></div>
-            <div class="comment-edit" id="cmt-son" contenteditable="true" data-placeholder="Nhập nhận xét..."></div>
+            <div class="comment-edit" id="cmt-son" contenteditable="true" spellcheck="false" data-placeholder="Nhập nhận xét..."></div>
           </div>
         </div>
       </div>
@@ -273,6 +273,10 @@
         <span class="note">Thời gian chạy máy theo FCST / Năng lực máy tại xưởng</span>
       </div>
 
+      <div class="placeholder-note">
+        📌 Đường <b>nét đặc</b> = tháng thực tế, đường <b>nét đứt</b> = 3 tháng dự báo (dùng để tính toán đầu tư máy móc). Để bật tính năng này, thêm cột <code>Loai</code> vào tab <code>Capacity</code> trong Google Sheet, điền <code>ThucTe</code> cho các tháng đã qua và <code>Forecast</code> cho các tháng dự báo (giống cách làm ở tab Forecast).
+      </div>
+
       <div class="grid-3">
         <div class="card">
           <h3>Máy Đúc 350T</h3>
@@ -280,7 +284,7 @@
           <div class="chart-box"><canvas id="chartCapa350"></canvas></div>
           <div class="comment-box">
             <div class="comment-label"><span class="dot"></span>Comment<span class="src">Google Sheet</span></div>
-            <div class="comment-edit" id="cmt-capa350" contenteditable="true" data-placeholder="Nhập nhận xét..."></div>
+            <div class="comment-edit" id="cmt-capa350" contenteditable="true" spellcheck="false" data-placeholder="Nhập nhận xét..."></div>
           </div>
         </div>
         <div class="card">
@@ -289,7 +293,7 @@
           <div class="chart-box"><canvas id="chartCapa850"></canvas></div>
           <div class="comment-box">
             <div class="comment-label"><span class="dot"></span>Comment<span class="src">Google Sheet</span></div>
-            <div class="comment-edit" id="cmt-capa850" contenteditable="true" data-placeholder="Nhập nhận xét..."></div>
+            <div class="comment-edit" id="cmt-capa850" contenteditable="true" spellcheck="false" data-placeholder="Nhập nhận xét..."></div>
           </div>
         </div>
         <div class="card">
@@ -298,7 +302,7 @@
           <div class="chart-box"><canvas id="chartCapaGC"></canvas></div>
           <div class="comment-box">
             <div class="comment-label"><span class="dot"></span>Comment<span class="src">Google Sheet</span></div>
-            <div class="comment-edit" id="cmt-capaGC" contenteditable="true" data-placeholder="Nhập nhận xét..."></div>
+            <div class="comment-edit" id="cmt-capaGC" contenteditable="true" spellcheck="false" data-placeholder="Nhập nhận xét..."></div>
           </div>
         </div>
       </div>
@@ -327,11 +331,11 @@
       <div class="grid-2" style="margin-top:20px;">
         <div class="card">
           <div class="comment-label"><span class="dot"></span>Nội dung đối ứng đáp ứng sản lượng tháng tới<span class="src">Google Sheet</span></div>
-          <div class="comment-edit" id="cmt-forecast-doiung" contenteditable="true" data-placeholder="Nhập kế hoạch đối ứng để đáp ứng forecast sản lượng tháng tới…" style="min-height:120px;"></div>
+          <div class="comment-edit" id="cmt-forecast-doiung" contenteditable="true" spellcheck="false" data-placeholder="Nhập kế hoạch đối ứng để đáp ứng forecast sản lượng tháng tới…" style="min-height:120px;"></div>
         </div>
         <div class="card">
           <div class="comment-label"><span class="dot"></span>Kế hoạch hoạt động trọng điểm ngoài sản xuất<span class="src">Google Sheet</span></div>
-          <div class="comment-edit" id="cmt-forecast-hoatdong" contenteditable="true" data-placeholder="Nhập các hoạt động trọng điểm ngoài sản xuất (đào tạo, cải tiến, đầu tư thiết bị...)…" style="min-height:120px;"></div>
+          <div class="comment-edit" id="cmt-forecast-hoatdong" contenteditable="true" spellcheck="false" data-placeholder="Nhập các hoạt động trọng điểm ngoài sản xuất (đào tạo, cải tiến, đầu tư thiết bị...)…" style="min-height:120px;"></div>
         </div>
       </div>
     </section>
@@ -411,16 +415,28 @@ const grid = '#E4DACB';
 Chart.defaults.font.family = "'Work Sans', sans-serif";
 Chart.defaults.color = '#5b5346';
 
-function lineTargetChart(ctx, actual, target, actualLabel, fmt, labels, yRange){
+function lineTargetChart(ctx, actual, target, actualLabel, fmt, labels, yRange, segmentTypes){
   labels = labels || monthsShort;
   const yOpts = {ticks:{callback:v=>fmt(v)}, grid:{color:grid}};
   if (yRange){ yOpts.min = yRange.min; yOpts.max = yRange.max; if(yRange.step){ yOpts.ticks.stepSize = yRange.step; } }
+  const mainDataset = {label:actualLabel, data:actual, borderColor:orange, backgroundColor:orange, tension:.3, pointRadius:4, borderWidth:3, spanGaps:false};
+  if (segmentTypes){
+    // Dash the line for any segment whose endpoint falls in a "Forecast" month, so the
+    // forecast continuation renders as a dashed line joined seamlessly to the solid actual line.
+    mainDataset.segment = {
+      borderDash: (c) => (segmentTypes[c.p1DataIndex] === 'Forecast') ? [6,4] : undefined
+    };
+    mainDataset.pointStyle = actual.map((_,i)=> segmentTypes[i] === 'Forecast' ? 'circle' : 'circle');
+    mainDataset.pointBackgroundColor = actual.map((_,i)=> segmentTypes[i] === 'Forecast' ? '#fff' : orange);
+    mainDataset.pointBorderColor = orange;
+    mainDataset.pointBorderWidth = actual.map((_,i)=> segmentTypes[i] === 'Forecast' ? 2 : 0);
+  }
   return new Chart(ctx, {
     type:'line',
     data:{
       labels:labels,
       datasets:[
-        {label:actualLabel, data:actual, borderColor:orange, backgroundColor:orange, tension:.3, pointRadius:4, borderWidth:3, spanGaps:false},
+        mainDataset,
         {label:'Mục tiêu', data:labels.map(()=>target), borderColor:navy, borderDash:[6,4], pointRadius:0, borderWidth:2}
       ]
     },
@@ -432,6 +448,7 @@ function lineTargetChart(ctx, actual, target, actualLabel, fmt, labels, yRange){
   });
 }
 const scale80_100 = {min:0.8, max:1.0, step:0.05};
+const scale80_105 = {min:0.8, max:1.05, step:0.05};
 const scale80_110 = {min:0.8, max:1.1, step:0.05};
 const pctFmt = v => (v*100).toFixed(0)+'%';
 
@@ -449,9 +466,10 @@ const DEMO_DATA = {
     son:    [0.999578,1.000000,1.000742,0.995693,0.999079,1.000000,null,null,null,null,null,null]
   },
   capacity:{
-    c350:[0.603681,0.612086,0.607304,0.457620,0.434083,0.371570,null,null,null,null,null,null],
-    c850:[0.029289,0.024510,0.019804,0.030353,0.092518,0.059865,null,null,null,null,null,null],
-    gc:  [1.092747,1.026434,1.206420,0.623704,0.279630,0.451637,null,null,null,null,null,null]
+    c350:[0.603681,0.612086,0.607304,0.457620,0.434083,0.371570, 0.35,0.33,0.30, null,null,null],
+    c850:[0.029289,0.024510,0.019804,0.030353,0.092518,0.059865, 0.07,0.08,0.09, null,null,null],
+    gc:  [1.092747,1.026434,1.206420,0.623704,0.279630,0.451637, 0.48,0.52,0.55, null,null,null],
+    loai:['ThucTe','ThucTe','ThucTe','ThucTe','ThucTe','ThucTe','Forecast','Forecast','Forecast','','','']
   },
   forecast:{
     actual:   {FCC:[null,null,null,null,null,null], Exedy:[null,null,null,null,null,null], Astemo:[null,null,null,null,null,null], TTI:[null,null,null,null,null,null], Khac:[null,null,null,null,null,null]},
@@ -508,16 +526,41 @@ async function fetchCSV(url){
 }
 function toNum(v){
   if (v === undefined || v === null || v === '') return null;
-  v = String(v).replace(/,/g,'').trim();
-  if (v.endsWith('%')) { const n=parseFloat(v); return isNaN(n)?null:n/100; }
-  const n = parseFloat(v);
-  return isNaN(n) ? null : n;
+  let s = String(v).trim();
+  let isPct = false;
+  if (s.endsWith('%')) { isPct = true; s = s.slice(0, -1).trim(); }
+
+  const hasComma = s.includes(',');
+  const hasDot = s.includes('.');
+  if (hasComma && hasDot) {
+    // Whichever separator appears last is the decimal separator
+    if (s.lastIndexOf(',') > s.lastIndexOf('.')) s = s.replace(/\./g,'').replace(',', '.');
+    else s = s.replace(/,/g,'');
+  } else if (hasComma && !hasDot) {
+    // Only commas: "0,60" / "1,09" -> decimal comma (VN); "12,345" (3-digit group) -> thousands separator
+    const parts = s.split(',');
+    const lastLen = parts[parts.length-1].length;
+    s = (parts.length === 2 && lastLen !== 3) ? s.replace(',', '.') : s.replace(/,/g,'');
+  }
+  // dot-only strings are left as-is (standard decimal, e.g. "0.603681" or plain integers)
+
+  const n = parseFloat(s);
+  if (isNaN(n)) return null;
+  return isPct ? n/100 : n;
 }
 function toMonthArray(objs, field){
   const arr = new Array(12).fill(null);
   (objs||[]).forEach(o => {
     const m = parseInt(o['Thang'], 10);
     if (m>=1 && m<=12) arr[m-1] = toNum(o[field]);
+  });
+  return arr;
+}
+function toMonthArrayRaw(objs, field){
+  const arr = new Array(12).fill('');
+  (objs||[]).forEach(o => {
+    const m = parseInt(o['Thang'], 10);
+    if (m>=1 && m<=12) arr[m-1] = (o[field]||'').trim();
   });
   return arr;
 }
@@ -560,21 +603,21 @@ function buildDataModel(raw){
     keHoachNam, totalSold,
     giaoHang:{rates:ghRates, thucTe:ghTT},
     khsx:{ duc:mkRate('Duc_KH','Duc_TT'), bavia:mkRate('Bavia_KH','Bavia_TT'), giacong:mkRate('GiaCong_KH','GiaCong_TT'), son:mkRate('Son_KH','Son_TT') },
-    capacity:{ c350:toMonthArray(raw.capacity,'Capa350'), c850:toMonthArray(raw.capacity,'Capa850'), gc:toMonthArray(raw.capacity,'CapaGC') },
+    capacity:{ c350:toMonthArray(raw.capacity,'Capa350'), c850:toMonthArray(raw.capacity,'Capa850'), gc:toMonthArray(raw.capacity,'CapaGC'), loai:toMonthArrayRaw(raw.capacity,'Loai') },
     forecast:{actual, forecast:forecastObj},
     comments: cmt
   };
 }
 
 /* ---------- Chart creation (initial paint with demo data) ---------- */
-chartsByTab.tab1.push(lineTargetChart(document.getElementById('chartGHDH'), DEMO_DATA.giaoHang.rates, 1, 'Tỉ lệ giao hàng đúng hạn', pctFmt, months12, scale80_100));
+chartsByTab.tab1.push(lineTargetChart(document.getElementById('chartGHDH'), DEMO_DATA.giaoHang.rates, 1, 'Tỉ lệ giao hàng đúng hạn', pctFmt, months12, scale80_105));
 chartsByTab.tab2.push(lineTargetChart(document.getElementById('chartDuc'), DEMO_DATA.khsx.duc, 1, 'Thành tích', pctFmt, months12, scale80_100));
 chartsByTab.tab2.push(lineTargetChart(document.getElementById('chartBavia'), DEMO_DATA.khsx.bavia, 1, 'Thành tích', pctFmt, months12, scale80_100));
 chartsByTab.tab2.push(lineTargetChart(document.getElementById('chartGiaCong'), DEMO_DATA.khsx.giacong, 1, 'Thành tích', pctFmt, months12, scale80_110));
 chartsByTab.tab2.push(lineTargetChart(document.getElementById('chartSon'), DEMO_DATA.khsx.son, 1, 'Thành tích', pctFmt, months12, scale80_110));
-chartsByTab.tab3.push(lineTargetChart(document.getElementById('chartCapa350'), DEMO_DATA.capacity.c350, 0.7, 'Tỉ lệ Capa', pctFmt, months12));
-chartsByTab.tab3.push(lineTargetChart(document.getElementById('chartCapa850'), DEMO_DATA.capacity.c850, 0.5, 'Tỉ lệ Capa', pctFmt, months12));
-chartsByTab.tab3.push(lineTargetChart(document.getElementById('chartCapaGC'), DEMO_DATA.capacity.gc, 0.9, 'Tỉ lệ Capa', pctFmt, months12));
+chartsByTab.tab3.push(lineTargetChart(document.getElementById('chartCapa350'), DEMO_DATA.capacity.c350, 0.7, 'Tỉ lệ Capa', pctFmt, months12, null, DEMO_DATA.capacity.loai));
+chartsByTab.tab3.push(lineTargetChart(document.getElementById('chartCapa850'), DEMO_DATA.capacity.c850, 0.5, 'Tỉ lệ Capa', pctFmt, months12, null, DEMO_DATA.capacity.loai));
+chartsByTab.tab3.push(lineTargetChart(document.getElementById('chartCapaGC'), DEMO_DATA.capacity.gc, 0.9, 'Tỉ lệ Capa', pctFmt, months12, null, DEMO_DATA.capacity.loai));
 
 const forecastColorsHex = {FCC:'#C87941', Exedy:'#33465C', Astemo:'#4C7A66', TTI:'#B33A3A', Khac:'#8A7F71'};
 function hexToRgba(hex, alpha){
@@ -655,10 +698,17 @@ function renderAll(data){
     {chart:chartsByTab.tab3[2], sub:'sub-capaGC', data:data.capacity.gc, target:0.9},
   ];
   capaCfg.forEach(({chart,sub,data:arr,target})=>{
-    chart.data.datasets[0].data = arr;
+    const loai = data.capacity.loai || [];
+    const ds = chart.data.datasets[0];
+    ds.data = arr;
+    ds.segment = { borderDash: (c) => (loai[c.p1DataIndex] === 'Forecast') ? [6,4] : undefined };
+    ds.pointBackgroundColor = arr.map((_,i)=> loai[i] === 'Forecast' ? '#fff' : orange);
+    ds.pointBorderColor = orange;
+    ds.pointBorderWidth = arr.map((_,i)=> loai[i] === 'Forecast' ? 2 : 0);
     chart.update();
-    const valid = arr.filter(v=>v!=null);
-    const avg = valid.length ? valid.reduce((a,b)=>a+b,0)/valid.length : null;
+    // "Lũy kế" only reflects actual (ThucTe) months, not the forecast months used for equipment planning
+    const validActual = arr.filter((v,i)=> v!=null && loai[i] !== 'Forecast');
+    const avg = validActual.length ? validActual.reduce((a,b)=>a+b,0)/validActual.length : null;
     document.getElementById(sub).innerHTML = `Mục tiêu ${(target*100).toFixed(0)}% · Lũy kế: <b>${fmtPct1(avg)}</b>`;
   });
 
