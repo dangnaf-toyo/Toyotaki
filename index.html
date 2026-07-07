@@ -103,7 +103,7 @@
   .comment-label .src{font-weight:400;text-transform:none;letter-spacing:0;font-style:italic;color:var(--tk-muted);margin-left:auto;font-size:10.5px;}
   .comment-edit{
     border:1.5px dashed var(--tk-line);border-radius:8px;padding:12px 14px;font-size:13px;line-height:1.55;
-    min-height:60px;background:#FFFDFA;outline:none;color:#3b382f;
+    min-height:60px;background:#FFFDFA;outline:none;color:#3b382f;white-space:pre-wrap;
   }
   .comment-edit:focus{border-color:var(--tk-orange);background:#fff;}
   .comment-edit:empty:before{content:attr(data-placeholder);color:var(--tk-muted);font-style:italic;}
@@ -687,13 +687,21 @@ function fmtPct1(n){ return n==null ? '—' : (n*100).toFixed(1)+'%'; }
 const savedRecently = {};
 const SAVED_GRACE_MS = 6 * 60 * 1000;
 
+// Google's "Publish to web" CSV export doesn't reliably preserve real newline characters
+// inside a cell (multi-line comments can come back merged into one line). To make
+// round-tripping bulletproof, newlines are escaped to a literal "\n" token before saving
+// and decoded back to real line breaks when loading — regardless of what Google's CSV
+// export does internally.
+function escapeForSheet(s){ return String(s||'').replace(/\r\n|\r|\n/g, '\\n'); }
+function unescapeForSheet(s){ return String(s||'').replace(/\\n/g, '\n'); }
+
 function setComment(id, text){
   const el = document.getElementById(id);
   if (!el) return;
   if (document.activeElement === el) return; // don't clobber while the user is typing
   const key = id.replace(/^cmt-/, '');
   if (savedRecently[key] && (Date.now() - savedRecently[key] < SAVED_GRACE_MS)) return;
-  if (text) el.textContent = text;
+  if (text) el.textContent = unescapeForSheet(text);
 }
 
 function renderAll(data){
@@ -851,7 +859,7 @@ async function saveComment(key, text, btnEl, statusEl){
     const res = await fetch(APPS_SCRIPT_URL, {
       method: 'POST',
       headers: {'Content-Type': 'text/plain;charset=utf-8'},
-      body: JSON.stringify({key, noiDung: text})
+      body: JSON.stringify({key, noiDung: escapeForSheet(text)})
     });
     const json = await res.json();
     if (json.ok){

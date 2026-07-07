@@ -582,12 +582,18 @@ function buildDataModel(raw){
 /* ---------- Comment save-to-sheet ---------- */
 const savedRecently = {};
 const SAVED_GRACE_MS = 6 * 60 * 1000;
+// Google's "Publish to web" CSV export doesn't reliably preserve real newline characters
+// inside a cell (can merge multi-line comments back into one line). To make round-tripping
+// bulletproof, newlines are escaped to a literal "\n" token before saving and decoded back
+// to real line breaks when loading — regardless of what Google's CSV export does internally.
+function escapeForSheet(s){ return String(s||'').replace(/\r\n|\r|\n/g, '\\n'); }
+function unescapeForSheet(s){ return String(s||'').replace(/\\n/g, '\n'); }
 function applyCommentValue(ta, comments){
   if (document.activeElement === ta) return;
   const key = ta.dataset.key;
   if (savedRecently[key] && (Date.now() - savedRecently[key] < SAVED_GRACE_MS)) return;
   const text = comments ? comments[key] : null;
-  if (text){ ta.value = text; }
+  if (text){ ta.value = unescapeForSheet(text); }
   else if (ta.dataset.default && !ta.value){ ta.value = ta.dataset.default; }
 }
 async function saveComment(key, text, btnEl, statusEl){
@@ -603,7 +609,7 @@ async function saveComment(key, text, btnEl, statusEl){
     const res = await fetch(APPS_SCRIPT_URL, {
       method: 'POST',
       headers: {'Content-Type': 'text/plain;charset=utf-8'},
-      body: JSON.stringify({key, noiDung: text})
+      body: JSON.stringify({key, noiDung: escapeForSheet(text)})
     });
     const json = await res.json();
     if (json.ok){
@@ -854,7 +860,7 @@ function renderDashboard(data){
   // ---- conclusion box ----
   const box = document.getElementById('conclusionBox');
   applyCommentValue(box, data.comments);
-  if (!box.value) box.value = data.comments.conclusion || '';
+  if (!box.value) box.value = unescapeForSheet(data.comments.conclusion || '');
 }
 
 /* ---------- Diagnostics ---------- */
