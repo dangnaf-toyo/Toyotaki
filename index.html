@@ -107,6 +107,16 @@
   }
   .comment-edit:focus{border-color:var(--tk-orange);background:#fff;}
   .comment-edit:empty:before{content:attr(data-placeholder);color:var(--tk-muted);font-style:italic;}
+  .comment-save-row{display:flex;align-items:center;gap:10px;margin-top:8px;}
+  .save-btn{
+    background:var(--tk-navy);color:#fff;border:none;padding:6px 14px;border-radius:100px;font-size:11.5px;font-weight:600;
+    cursor:pointer;font-family:'Work Sans',sans-serif;
+  }
+  .save-btn:hover{background:#243347;}
+  .save-btn:disabled{opacity:.5;cursor:wait;}
+  .save-status{font-size:11.5px;color:var(--tk-muted);}
+  .save-status.ok{color:var(--tk-good);}
+  .save-status.err{color:var(--tk-bad);}
 
   table.kpi-table{width:100%;border-collapse:collapse;font-size:13px;}
   table.kpi-table th,table.kpi-table td{padding:8px 10px;text-align:right;border-bottom:1px solid var(--tk-line);}
@@ -361,7 +371,21 @@
         <li>Lưu file, upload file HTML này lên GitHub Pages (hoặc Google Sites / Netlify) để có link truy cập từ mọi thiết bị có internet.</li>
         <li>Dashboard sẽ tự động tải lại dữ liệu mỗi 5 phút, hoặc bấm nút "🔄 Làm mới" để cập nhật ngay lập tức.</li>
       </ol>
-      <p>Lưu ý: các ô ghi chú (comment) hiển thị nội dung từ tab <b>Comments</b> trong Google Sheet. Gõ trực tiếp vào ô trên dashboard chỉ lưu tạm trong trình duyệt của bạn — để đồng bộ cho mọi người, hãy sửa trong Google Sheet.</p>
+      <p>Lưu ý: các ô ghi chú (comment) hiển thị nội dung từ tab <b>Comments</b> trong Google Sheet. Bấm nút <b>"💾 Lưu vào Google Sheet"</b> dưới mỗi ô để ghi thẳng vào Sheet (cần cấu hình <code>APPS_SCRIPT_URL</code> — xem file <code>AppsScript_Comments_Backend.gs.txt</code> đi kèm). Nếu chưa cấu hình, nội dung gõ vào chỉ lưu tạm trong trình duyệt của bạn.</p>
+    </div>
+  </details>
+
+  <details class="setup-guide">
+    <summary>Cách bật tính năng "Lưu comment vào Google Sheet"</summary>
+    <div class="guide-body">
+      <ol>
+        <li>Mở Google Sheet dữ liệu dashboard → menu <b>Extensions → Apps Script</b>.</li>
+        <li>Dán nội dung file <code>AppsScript_Comments_Backend.gs.txt</code> vào (xoá code mẫu cũ trước).</li>
+        <li>Bấm <b>Deploy → New deployment</b> → chọn loại <b>Web app</b> → Execute as: <b>Me</b> → Who has access: <b>Anyone</b> → Deploy.</li>
+        <li>Cấp quyền khi được hỏi (chọn tài khoản Google → Advanced → Go to ... (unsafe) → Allow).</li>
+        <li>Copy link dạng <code>https://script.google.com/macros/s/.../exec</code>, dán vào biến <code>APPS_SCRIPT_URL</code> ở đầu file <code>index.html</code> (mở bằng trình soạn thảo văn bản).</li>
+        <li>Lưu file, upload lại lên GitHub Pages. Giờ mỗi ô comment sẽ có nút "💾 Lưu vào Google Sheet" hoạt động thật.</li>
+      </ol>
     </div>
   </details>
 
@@ -396,14 +420,18 @@
    Leave as-is (starting with PASTE_) to keep using demo data.
    ========================================================================= */
 const CSV_URLS = {
-  giaoHang:  'https://docs.google.com/spreadsheets/d/e/2PACX-1vRH6nnCbmo7ucx6P6lNmT4MzkB3kkbGBjxoMfokROsOva3bNpepLh1POa0Uv2dkpw/pub?gid=1605056068&single=true&output=csv',
-  khsx:      'https://docs.google.com/spreadsheets/d/e/2PACX-1vRH6nnCbmo7ucx6P6lNmT4MzkB3kkbGBjxoMfokROsOva3bNpepLh1POa0Uv2dkpw/pub?gid=260979314&single=true&output=csv',
-  capacity:  'https://docs.google.com/spreadsheets/d/e/2PACX-1vRH6nnCbmo7ucx6P6lNmT4MzkB3kkbGBjxoMfokROsOva3bNpepLh1POa0Uv2dkpw/pub?gid=1583553722&single=true&output=csv',
-  forecast:  'https://docs.google.com/spreadsheets/d/e/2PACX-1vRH6nnCbmo7ucx6P6lNmT4MzkB3kkbGBjxoMfokROsOva3bNpepLh1POa0Uv2dkpw/pub?gid=740807083&single=true&output=csv',
-  comments:  'https://docs.google.com/spreadsheets/d/e/2PACX-1vRH6nnCbmo7ucx6P6lNmT4MzkB3kkbGBjxoMfokROsOva3bNpepLh1POa0Uv2dkpw/pub?gid=124432865&single=true&output=csv',
-  config:    'https://docs.google.com/spreadsheets/d/e/2PACX-1vRH6nnCbmo7ucx6P6lNmT4MzkB3kkbGBjxoMfokROsOva3bNpepLh1POa0Uv2dkpw/pub?gid=164897843&single=true&output=csv'
+  giaoHang:  'https://docs.google.com/spreadsheets/d/e/2PACX-1vRSZR34zYG64CphKRulkYvm_6Ks2kWVHWsJM9NGUZLEjRKwSS6cZcOdMgL-zqEckxyNys_HE1EHEGf3/pub?gid=1605056068&single=true&output=csv',
+  khsx:      'https://docs.google.com/spreadsheets/d/e/2PACX-1vRSZR34zYG64CphKRulkYvm_6Ks2kWVHWsJM9NGUZLEjRKwSS6cZcOdMgL-zqEckxyNys_HE1EHEGf3/pub?gid=260979314&single=true&output=csv',
+  capacity:  'https://docs.google.com/spreadsheets/d/e/2PACX-1vRSZR34zYG64CphKRulkYvm_6Ks2kWVHWsJM9NGUZLEjRKwSS6cZcOdMgL-zqEckxyNys_HE1EHEGf3/pub?gid=1583553722&single=true&output=csv',
+  forecast:  'https://docs.google.com/spreadsheets/d/e/2PACX-1vRSZR34zYG64CphKRulkYvm_6Ks2kWVHWsJM9NGUZLEjRKwSS6cZcOdMgL-zqEckxyNys_HE1EHEGf3/pub?gid=740807083&single=true&output=csv',
+  comments:  'https://docs.google.com/spreadsheets/d/e/2PACX-1vRSZR34zYG64CphKRulkYvm_6Ks2kWVHWsJM9NGUZLEjRKwSS6cZcOdMgL-zqEckxyNys_HE1EHEGf3/pub?gid=124432865&single=true&output=csv',
+  config:    'https://docs.google.com/spreadsheets/d/e/2PACX-1vRSZR34zYG64CphKRulkYvm_6Ks2kWVHWsJM9NGUZLEjRKwSS6cZcOdMgL-zqEckxyNys_HE1EHEGf3/pub?gid=164897843&single=true&output=csv'
 };
 const AUTO_REFRESH_MS = 5 * 60 * 1000; // 5 minutes
+
+/* Web App URL from the Apps Script backend (see AppsScript_Comments_Backend.gs.txt) —
+   lets the dashboard SAVE comments back into the Comments tab, not just read them. */
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz-vAFxrBA1rqTgihCsbMw0b7ibBIM3wY4WkJl-HGXrHH7igXjgkdmeCFf6FjHcLyeYNw/exec';
 /* ========================================================================= */
 
 const monthsShort = ['T1','T2','T3','T4','T5','T6'];
@@ -424,12 +452,12 @@ function lineTargetChart(ctx, actual, target, actualLabel, fmt, labels, yRange, 
     // Dash the line for any segment whose endpoint falls in a "Forecast" month, so the
     // forecast continuation renders as a dashed line joined seamlessly to the solid actual line.
     mainDataset.segment = {
-      borderDash: (c) => (segmentTypes[c.p1DataIndex] === 'Forecast') ? [6,4] : undefined
+      borderDash: (c) => isForecast(segmentTypes[c.p1DataIndex]) ? [6,4] : undefined
     };
-    mainDataset.pointStyle = actual.map((_,i)=> segmentTypes[i] === 'Forecast' ? 'circle' : 'circle');
-    mainDataset.pointBackgroundColor = actual.map((_,i)=> segmentTypes[i] === 'Forecast' ? '#fff' : orange);
+    mainDataset.pointStyle = actual.map((_,i)=> isForecast(segmentTypes[i]) ? 'circle' : 'circle');
+    mainDataset.pointBackgroundColor = actual.map((_,i)=> isForecast(segmentTypes[i]) ? '#fff' : orange);
     mainDataset.pointBorderColor = orange;
-    mainDataset.pointBorderWidth = actual.map((_,i)=> segmentTypes[i] === 'Forecast' ? 2 : 0);
+    mainDataset.pointBorderWidth = actual.map((_,i)=> isForecast(segmentTypes[i]) ? 2 : 0);
   }
   return new Chart(ctx, {
     type:'line',
@@ -451,6 +479,9 @@ const scale80_100 = {min:0.8, max:1.0, step:0.05};
 const scale80_105 = {min:0.8, max:1.05, step:0.05};
 const scale80_110 = {min:0.8, max:1.1, step:0.05};
 const pctFmt = v => (v*100).toFixed(0)+'%';
+// Tolerant match so "Forecast", "forecast ", "FORECAST" all count — avoids silent breakage
+// from small typos/casing differences when someone types this into the Sheet by hand.
+function isForecast(v){ return String(v||'').trim().toLowerCase() === 'forecast'; }
 
 const chartsByTab = {tab1:[], tab2:[], tab3:[], tab4:[]};
 
@@ -651,10 +682,17 @@ buildForecastChart(DEMO_DATA.forecast);
 function fmtInt(n){ return n==null ? '—' : Math.round(n).toLocaleString('vi-VN'); }
 function fmtPct1(n){ return n==null ? '—' : (n*100).toFixed(1)+'%'; }
 
+// Tracks keys the user just saved, so a stale cached CSV read (Google's "Publish to web"
+// can lag a few minutes) doesn't visually revert their just-saved text.
+const savedRecently = {};
+const SAVED_GRACE_MS = 6 * 60 * 1000;
+
 function setComment(id, text){
   const el = document.getElementById(id);
   if (!el) return;
   if (document.activeElement === el) return; // don't clobber while the user is typing
+  const key = id.replace(/^cmt-/, '');
+  if (savedRecently[key] && (Date.now() - savedRecently[key] < SAVED_GRACE_MS)) return;
   if (text) el.textContent = text;
 }
 
@@ -701,13 +739,13 @@ function renderAll(data){
     const loai = data.capacity.loai || [];
     const ds = chart.data.datasets[0];
     ds.data = arr;
-    ds.segment = { borderDash: (c) => (loai[c.p1DataIndex] === 'Forecast') ? [6,4] : undefined };
-    ds.pointBackgroundColor = arr.map((_,i)=> loai[i] === 'Forecast' ? '#fff' : orange);
+    ds.segment = { borderDash: (c) => isForecast(loai[c.p1DataIndex]) ? [6,4] : undefined };
+    ds.pointBackgroundColor = arr.map((_,i)=> isForecast(loai[i]) ? '#fff' : orange);
     ds.pointBorderColor = orange;
-    ds.pointBorderWidth = arr.map((_,i)=> loai[i] === 'Forecast' ? 2 : 0);
+    ds.pointBorderWidth = arr.map((_,i)=> isForecast(loai[i]) ? 2 : 0);
     chart.update();
     // "Lũy kế" only reflects actual (ThucTe) months, not the forecast months used for equipment planning
-    const validActual = arr.filter((v,i)=> v!=null && loai[i] !== 'Forecast');
+    const validActual = arr.filter((v,i)=> v!=null && !isForecast(loai[i]));
     const avg = validActual.length ? validActual.reduce((a,b)=>a+b,0)/validActual.length : null;
     document.getElementById(sub).innerHTML = `Mục tiêu ${(target*100).toFixed(0)}% · Lũy kế: <b>${fmtPct1(avg)}</b>`;
   });
@@ -794,6 +832,55 @@ async function loadData(){
     btn.disabled = false;
   }
 }
+
+/* ---------- Save comments back to the Google Sheet (Apps Script Web App) ---------- */
+function isAppsScriptConfigured(){
+  return APPS_SCRIPT_URL && !APPS_SCRIPT_URL.startsWith('PASTE_');
+}
+async function saveComment(key, text, btnEl, statusEl){
+  if (!isAppsScriptConfigured()){
+    statusEl.textContent = '⚠️ Chưa cấu hình APPS_SCRIPT_URL trong file HTML';
+    statusEl.className = 'save-status err';
+    return;
+  }
+  btnEl.disabled = true;
+  statusEl.textContent = 'Đang lưu…';
+  statusEl.className = 'save-status';
+  try {
+    // text/plain avoids a CORS preflight (Apps Script web apps don't handle OPTIONS)
+    const res = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: {'Content-Type': 'text/plain;charset=utf-8'},
+      body: JSON.stringify({key, noiDung: text})
+    });
+    const json = await res.json();
+    if (json.ok){
+      savedRecently[key] = Date.now();
+      statusEl.textContent = '✓ Đã lưu lúc ' + nowStr();
+      statusEl.className = 'save-status ok';
+    } else {
+      statusEl.textContent = '❌ Lỗi: ' + (json.error || 'không rõ nguyên nhân');
+      statusEl.className = 'save-status err';
+    }
+  } catch(err){
+    statusEl.textContent = '❌ Lỗi kết nối: ' + err.message;
+    statusEl.className = 'save-status err';
+  } finally {
+    btnEl.disabled = false;
+  }
+}
+// Inject a "💾 Lưu" button + status line under every comment box automatically
+// (keeps the 10 comment blocks in the HTML untouched — one place to maintain this behavior).
+document.querySelectorAll('.comment-edit[id^="cmt-"]').forEach(el => {
+  const key = el.id.replace(/^cmt-/, '');
+  const row = document.createElement('div');
+  row.className = 'comment-save-row';
+  row.innerHTML = `<button type="button" class="save-btn">💾 Lưu vào Google Sheet</button><span class="save-status"></span>`;
+  el.insertAdjacentElement('afterend', row);
+  const btn = row.querySelector('.save-btn');
+  const status = row.querySelector('.save-status');
+  btn.addEventListener('click', () => saveComment(key, el.innerText.trim(), btn, status));
+});
 
 /* ---------- Tab switching ---------- */
 document.querySelectorAll('.tab-btn').forEach(btn=>{
