@@ -35,7 +35,7 @@
 
   header.top{display:flex; justify-content:space-between; align-items:flex-end; border-bottom:3px solid var(--ink); padding-bottom:18px; margin-bottom:22px; flex-wrap:wrap; gap:14px;}
   .brand{display:flex; align-items:center; gap:14px;}
-  .brand .mark{width:46px;height:46px;border-radius:9px;background:var(--ink); display:flex;align-items:center;justify-content:center; color:var(--orange); font-family:'Zilla Slab',serif; font-weight:700; font-size:20px; flex-shrink:0;}
+  .brand .mark{width:46px;height:46px;border-radius:9px;background:var(--ink); flex-shrink:0; object-fit:contain; padding:4px; box-sizing:border-box;}
   .brand h1{font-family:'Zilla Slab',serif; font-size:25px; margin:0; line-height:1.15; letter-spacing:.01em;}
   .brand p{margin:2px 0 0; font-size:12.5px; color:var(--muted); letter-spacing:.02em;}
   .meta{text-align:right; font-size:12.5px; color:var(--muted); line-height:1.6;}
@@ -165,7 +165,7 @@
 
   <header class="top">
     <div class="brand">
-      <div class="mark">TK</div>
+      <img class="mark" src="https://lh3.googleusercontent.com/d/1Da5A4JNUXZsUWeJwc1WW9lhI47_xz9LR" alt="TOYOTAKI">
       <div>
         <h1>DASHBOARD KPI CHẤT LƯỢNG</h1>
         <p>Công ty CP Công nghiệp TOYOTAKI · KCN Khai Quang, Vĩnh Phúc, Phú Thọ</p>
@@ -1019,6 +1019,7 @@ function renderDashboard(data){
     wireAllCommentBoxes(document.getElementById('batthuong'), data.comments);
     wireAllCommentBoxes(document.getElementById('nglan1'), data.comments);
     structureBuilt = true;
+    restoreAndTrackCommentSizes();
 
   } else {
     // ---- update-only path: just refresh chart data + text, DOM nodes (and any manual
@@ -1202,6 +1203,24 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
     requestAnimationFrame(() => { allCharts.forEach(c => c.resize()); });
   });
 });
+
+/* ---------- Remember manually-resized comment box heights across page reloads ----------
+   The browser's native drag-to-resize only lasts until the page is reloaded (F5, or
+   revisiting the link later) — that's normal browser behavior, not something the internal
+   5-minute auto-refresh causes. Persisting the height in localStorage fixes it either way. */
+function restoreAndTrackCommentSizes(){
+  document.querySelectorAll('textarea[data-key], .comment-edit').forEach(ta=>{
+    const storeKey = 'commentHeight_' + (ta.dataset.key || ta.id);
+    if (!storeKey || storeKey === 'commentHeight_') return;
+    if (ta._sizeTracked) return; // avoid double-binding on static boxes across renders
+    ta._sizeTracked = true;
+    const saved = localStorage.getItem(storeKey);
+    if (saved) ta.style.height = saved;
+    ta.addEventListener('mouseup', () => {
+      if (ta.style.height) localStorage.setItem(storeKey, ta.style.height);
+    });
+  });
+}
 
 /* ---------- Init ---------- */
 renderDashboard(DEMO_DATA);
