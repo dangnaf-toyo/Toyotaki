@@ -60,6 +60,8 @@
   .pill.bad{background:#F5E2DD; color:var(--bad);}
 
   .grid-2{display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;}
+  .grid-3{display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; margin-bottom:16px;}
+  .pie-box{height:240px; position:relative; margin:0 auto;}
   .panel{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:18px 20px; margin-bottom:16px;}
   .panel-head{display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:3px;}
   .panel h3{font-family:'Zilla Slab',serif; font-size:16.5px; margin:0; font-weight:600;}
@@ -117,6 +119,7 @@
   @media (max-width:1000px){
     .kpi-row{grid-template-columns:repeat(2,1fr);}
     .grid-2{grid-template-columns:1fr;}
+    .grid-3{grid-template-columns:1fr;}
     .proc-grid{grid-template-columns:1fr;}
     .matrix{grid-template-columns:1fr;}
     .mx-head:not(:first-child){display:none;}
@@ -187,6 +190,8 @@
     <button class="tab-btn active" data-tab="overview">Tổng quan</button>
     <button class="tab-btn" data-tab="process">Theo công đoạn</button>
     <button class="tab-btn" data-tab="customer">Theo khách hàng</button>
+    <button class="tab-btn" data-tab="batthuong">Bất thường chất lượng</button>
+    <button class="tab-btn" data-tab="nglan1">Tỷ lệ NG lần 1</button>
   </nav>
 
   <!-- ================= OVERVIEW ================= -->
@@ -298,6 +303,57 @@
 
   </section>
 
+  <section class="view" id="batthuong">
+
+    <div class="grid-2">
+      <div class="panel">
+        <h3>Số vụ bất thường tại khách hàng</h3>
+        <p class="desc">Tháng 1–Tháng 12 · Cột trái: số vụ phát sinh · Cột phải: số vụ đã có đối sách</p>
+        <canvas id="chartBatThuongKH"></canvas>
+        <div id="cmtHolder_batthuong_khbar"></div>
+      </div>
+      <div class="panel">
+        <h3>Số vụ bất thường nội bộ</h3>
+        <p class="desc">Tháng 1–Tháng 12 · Cột trái: số vụ phát sinh · Cột phải: số vụ đã có đối sách</p>
+        <canvas id="chartBatThuongNB"></canvas>
+        <div id="cmtHolder_batthuong_nbbar"></div>
+      </div>
+    </div>
+
+    <div class="grid-3">
+      <div class="panel">
+        <h3>Tỷ lệ theo công đoạn — tại khách hàng</h3>
+        <p class="desc">Lũy kế từ đầu năm đến tháng báo cáo</p>
+        <div class="pie-box"><canvas id="chartPieKH"></canvas></div>
+        <div id="cmtHolder_batthuong_pie1"></div>
+      </div>
+      <div class="panel">
+        <h3>Tỷ lệ theo công đoạn — nội bộ</h3>
+        <p class="desc">Lũy kế từ đầu năm đến tháng báo cáo</p>
+        <div class="pie-box"><canvas id="chartPieNB"></canvas></div>
+        <div id="cmtHolder_batthuong_pie2"></div>
+      </div>
+      <div class="panel">
+        <h3>Số vụ chưa trả lời theo bộ phận</h3>
+        <p class="desc">Trạng thái hiện tại (chưa CLOSED)</p>
+        <div class="pie-box"><canvas id="chartPieChuaTraLoi"></canvas></div>
+        <div id="cmtHolder_batthuong_pie3"></div>
+      </div>
+    </div>
+
+  </section>
+
+  <section class="view" id="nglan1">
+
+    <div class="panel">
+      <h3>Tỷ lệ NG lần 1 tại các công đoạn</h3>
+      <p class="desc">Tháng 1–Tháng 12 · Đúc · Bavia · Gia công · Sơn — chờ bổ sung số liệu</p>
+      <canvas id="chartNGLan1"></canvas>
+      <div id="cmtHolder_ng_lan1"></div>
+    </div>
+
+  </section>
+
   <details class="setup-guide" id="diagPanel">
     <summary>🔍 Chi tiết kết nối từng Sheet (debug)</summary>
     <div class="guide-body">
@@ -312,8 +368,8 @@
     <div class="guide-body">
       <ol>
         <li>Upload file mẫu <code>TOYOTAKI_ChatLuong_DuLieu.xlsx</code> lên Google Drive, mở bằng Google Sheets (File → Save as Google Sheets).</li>
-        <li>Cập nhật số liệu các tháng tiếp theo trực tiếp trong Sheet (8 tab: TongHop, TheoKhachHang, TheoCongDoan, QC_DailyNG, QC_Repaint, Targets, Comments, Config).</li>
-        <li>Vào <b>File → Share → Publish to web</b>. Chọn từng tab (không chọn "Toàn bộ tài liệu"), định dạng chọn <b>CSV</b>, bấm Publish. Lặp lại cho cả 8 tab.</li>
+        <li>Cập nhật số liệu các tháng tiếp theo trực tiếp trong Sheet (13 tab: TongHop, TheoKhachHang, TheoCongDoan, QC_DailyNG, QC_Repaint, Targets, Comments, Config, BatThuong_Thang, BatThuong_KH_CongDoan, BatThuong_NB_CongDoan, BatThuong_ChuaTraLoi, NG_Lan1).</li>
+        <li>Vào <b>File → Share → Publish to web</b>. Chọn từng tab (không chọn "Toàn bộ tài liệu"), định dạng chọn <b>CSV</b>, bấm Publish. Lặp lại cho cả 13 tab.</li>
         <li>Copy 8 đường link, dán vào phần <code>CSV_URLS</code> ở đầu thẻ <code>&lt;script&gt;</code> trong file HTML này.</li>
         <li>Để bật tính năng lưu comment: mở Sheet này → Extensions → Apps Script → dán code từ file <code>AppsScript_Comments_Backend.gs.txt</code> (dùng chung mẫu với Dashboard Sản lượng) → Deploy dưới dạng Web app → copy link <code>.../exec</code> → dán vào biến <code>APPS_SCRIPT_URL</code>.</li>
         <li>Lưu file, upload lên GitHub Pages (cùng repo với Dashboard Sản lượng cũng được, đặt tên file khác đi, ví dụ <code>chatluong.html</code>).</li>
@@ -333,14 +389,19 @@
    Leave as-is (starting with PASTE_) to keep using demo data.
    ========================================================================= */
 const CSV_URLS = {
-  tongHop: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSAseiF_WU7d5jEP0pNUPvQYgu0CMmmssR527y5rLpinWigJ9q2nyE2XdI6dscAkf47lJfHm0ii_muR/pub?gid=1828890824&single=true&output=csv',
-  theoKhachHang: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSAseiF_WU7d5jEP0pNUPvQYgu0CMmmssR527y5rLpinWigJ9q2nyE2XdI6dscAkf47lJfHm0ii_muR/pub?gid=342438972&single=true&output=csv',
-  theoCongDoan: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSAseiF_WU7d5jEP0pNUPvQYgu0CMmmssR527y5rLpinWigJ9q2nyE2XdI6dscAkf47lJfHm0ii_muR/pub?gid=902066588&single=true&output=csv',
-  qcDaily: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSAseiF_WU7d5jEP0pNUPvQYgu0CMmmssR527y5rLpinWigJ9q2nyE2XdI6dscAkf47lJfHm0ii_muR/pub?gid=953026792&single=true&output=csv',
-  qcRepaint: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSAseiF_WU7d5jEP0pNUPvQYgu0CMmmssR527y5rLpinWigJ9q2nyE2XdI6dscAkf47lJfHm0ii_muR/pub?gid=560817531&single=true&output=csv',
-  targets: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSAseiF_WU7d5jEP0pNUPvQYgu0CMmmssR527y5rLpinWigJ9q2nyE2XdI6dscAkf47lJfHm0ii_muR/pub?gid=356174980&single=true&output=csv',
-  comments: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSAseiF_WU7d5jEP0pNUPvQYgu0CMmmssR527y5rLpinWigJ9q2nyE2XdI6dscAkf47lJfHm0ii_muR/pub?gid=1687982602&single=true&output=csv',
-  config: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSAseiF_WU7d5jEP0pNUPvQYgu0CMmmssR527y5rLpinWigJ9q2nyE2XdI6dscAkf47lJfHm0ii_muR/pub?gid=925884044&single=true&output=csv'
+  tongHop:       'https://docs.google.com/spreadsheets/d/e/2PACX-1vSAseiF_WU7d5jEP0pNUPvQYgu0CMmmssR527y5rLpinWigJ9q2nyE2XdI6dscAkf47lJfHm0ii_muR/pub?gid=1828890824&single=true&output=csv',
+  theoKhachHang:       'https://docs.google.com/spreadsheets/d/e/2PACX-1vSAseiF_WU7d5jEP0pNUPvQYgu0CMmmssR527y5rLpinWigJ9q2nyE2XdI6dscAkf47lJfHm0ii_muR/pub?gid=342438972&single=true&output=csv',
+  theoCongDoan:       'https://docs.google.com/spreadsheets/d/e/2PACX-1vSAseiF_WU7d5jEP0pNUPvQYgu0CMmmssR527y5rLpinWigJ9q2nyE2XdI6dscAkf47lJfHm0ii_muR/pub?gid=902066588&single=true&output=csv',
+  qcDaily:       'https://docs.google.com/spreadsheets/d/e/2PACX-1vSAseiF_WU7d5jEP0pNUPvQYgu0CMmmssR527y5rLpinWigJ9q2nyE2XdI6dscAkf47lJfHm0ii_muR/pub?gid=953026792&single=true&output=csv',
+  qcRepaint:       'https://docs.google.com/spreadsheets/d/e/2PACX-1vSAseiF_WU7d5jEP0pNUPvQYgu0CMmmssR527y5rLpinWigJ9q2nyE2XdI6dscAkf47lJfHm0ii_muR/pub?gid=560817531&single=true&output=csv',
+  targets:       'https://docs.google.com/spreadsheets/d/e/2PACX-1vSAseiF_WU7d5jEP0pNUPvQYgu0CMmmssR527y5rLpinWigJ9q2nyE2XdI6dscAkf47lJfHm0ii_muR/pub?gid=356174980&single=true&output=csv',
+  comments:       'https://docs.google.com/spreadsheets/d/e/2PACX-1vSAseiF_WU7d5jEP0pNUPvQYgu0CMmmssR527y5rLpinWigJ9q2nyE2XdI6dscAkf47lJfHm0ii_muR/pub?gid=1687982602&single=true&output=csv',
+  config:       'https://docs.google.com/spreadsheets/d/e/2PACX-1vSAseiF_WU7d5jEP0pNUPvQYgu0CMmmssR527y5rLpinWigJ9q2nyE2XdI6dscAkf47lJfHm0ii_muR/pub?gid=925884044&single=true&output=csv',
+  batThuongThang: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSAseiF_WU7d5jEP0pNUPvQYgu0CMmmssR527y5rLpinWigJ9q2nyE2XdI6dscAkf47lJfHm0ii_muR/pub?gid=384977035&single=true&output=csv',
+  batThuongKH: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSAseiF_WU7d5jEP0pNUPvQYgu0CMmmssR527y5rLpinWigJ9q2nyE2XdI6dscAkf47lJfHm0ii_muR/pub?gid=1135801931&single=true&output=csv',
+  batThuongNB: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSAseiF_WU7d5jEP0pNUPvQYgu0CMmmssR527y5rLpinWigJ9q2nyE2XdI6dscAkf47lJfHm0ii_muR/pub?gid=924373293&single=true&output=csv',
+  batThuongChuaTraLoi: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSAseiF_WU7d5jEP0pNUPvQYgu0CMmmssR527y5rLpinWigJ9q2nyE2XdI6dscAkf47lJfHm0ii_muR/pub?gid=523311830&single=true&output=csv',
+  ngLan1: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSAseiF_WU7d5jEP0pNUPvQYgu0CMmmssR527y5rLpinWigJ9q2nyE2XdI6dscAkf47lJfHm0ii_muR/pub?gid=214850793&single=true&output=csv'
 };
 const AUTO_REFRESH_MS = 5 * 60 * 1000; // 5 minutes
 
@@ -360,6 +421,16 @@ const lineColors = ['#C87941','#4C7A5E','#3E6A8F','#AC4231','#8A6BAE'];
 
 function pad12(arr){ const out = arr.slice(0,6); while(out.length<12) out.push(null); return out; }
 function targetArr(v){ return Array(12).fill(v); }
+// Sums each process's monthly array from month 1 up to (and including) reportIdx — used for the
+// "lũy kế từ đầu năm đến tháng báo cáo" pie charts.
+function sumUpTo(byProcess, reportIdx){
+  return ['Duc','Bavia','GiaCong','Son'].map(k=>{
+    const arr = byProcess[k] || [];
+    let sum = 0;
+    for (let i=0;i<=reportIdx;i++){ sum += (arr[i]||0); }
+    return sum;
+  });
+}
 function rateOrNull(ng,prod){ if(ng===null||prod===null||prod===undefined) return null; return prod ? (ng/prod*100) : 0; }
 function fmtPct(v){ return v==null ? '–' : v.toFixed(2).replace('.',',') + '%'; }
 function fmtInt(v){ return v==null ? '–' : Math.round(v).toLocaleString('vi-VN'); }
@@ -412,6 +483,20 @@ const DEMO_DATA = (function(){
     pcts: [0.0,23.64,25.43,6.49,51.02,56.09,61.93,12.73,24.72,20.91,54.1,61.64,31.0,39.03]
   };
   const qcRepaint = {sonLan1:36.99, sonLai:51.92};
+  const batThuong = {
+    khTotal: pad12([7,4,11,8,13,2]), khClosed: pad12([4,1,0,0,0,0]),
+    nbTotal: pad12([2,1,18,13,13,0]), nbClosed: pad12([0,0,0,0,0,0])
+  };
+  const batThuongKHCongDoan = {
+    Duc: pad12([4,1,6,6,9,0]), Bavia: pad12([0,1,1,0,0,0]), GiaCong: pad12([3,2,3,2,4,2]), Son: pad12([0,0,1,0,0,0])
+  };
+  const batThuongNBCongDoan = {
+    Duc: pad12([0,1,15,10,6,0]), Bavia: pad12([1,0,2,1,0,0]), GiaCong: pad12([1,0,1,2,7,0]), Son: pad12([0,0,0,0,0,0])
+  };
+  const batThuongChuaTraLoi = {Duc:55, Bavia:6, GiaCong:20, Son:1};
+  const ngLan1 = {
+    Duc: Array(12).fill(null), Bavia: Array(12).fill(null), GiaCong: Array(12).fill(null), Son: Array(12).fill(null)
+  };
   const comments = {
     conclusion: "Tháng 6/2026: Tỷ lệ báo phế nội bộ toàn công ty đạt 3,77% (mục tiêu 2,00%) — chưa đạt, tập trung chủ yếu tại EXEDY và KHÁC ở công đoạn Đúc.\nTỷ lệ hàng khách hàng trả về Tháng 6 là 2,29% (mục tiêu 0,76%), chủ yếu do sự cố KWW NG nhăn (7.404pcs, phát sinh 1 lần, đã có đối sách). Nếu loại trừ sự cố này, tỷ lệ thực tế chỉ 0,49% — cho thấy chất lượng nền vẫn trong tầm kiểm soát.\nĐề xuất: theo dõi hiệu quả đối sách KWW trong Tháng 7, đồng thời rà soát nguyên nhân NG tại EXEDY/KHÁC công đoạn Đúc.",
     overview_return: "Tháng 6 thực tế 2,29% (mục tiêu 0,76%) — chủ yếu do sự cố KWW NG nhăn 7.404pcs, phát sinh 1 lần, đã có đối sách. Nếu loại trừ KWW: tỷ lệ thực tế chỉ 0,49% (dưới mục tiêu).",
@@ -420,11 +505,13 @@ const DEMO_DATA = (function(){
     customer_internal_FOMECO: 'Panel L NG lõm pin 251pcs',
     customer_internal_EXEDY: 'Sản phẩm Plly NG thiếu nhôm 961pcs; CL Center NG bong nhôm 779pcs',
     customer_internal_KHAC: '647119002 NG vênh phôi 832pcs; Premo NG thiếu nhôm 772pcs/nhăn 457pcs; Ligo NG ngấn bậc 550pcs; 8001/8002 NG bong nhôm 352/381pcs',
-    customer_return_KHAC: 'Sản phẩm KWW NG nhăn 7.404pcs — nguyên nhân chính khiến tỷ lệ trả hàng T6 vượt mục tiêu mạnh (đã có đối sách)'
+    customer_return_KHAC: 'Sản phẩm KWW NG nhăn 7.404pcs — nguyên nhân chính khiến tỷ lệ trả hàng T6 vượt mục tiêu mạnh (đã có đối sách)',
+    batthuong_khbar: '', batthuong_nbbar: '', batthuong_pie1: '', batthuong_pie2: '', batthuong_pie3: '', ng_lan1: ''
   };
   return {
     internalTotal, returnTotal, bonusPoints, internalByCustomer, returnByCustomer,
     processes, returnNotTracked, qcDaily, qcRepaint, comments,
+    batThuong, batThuongKHCongDoan, batThuongNBCongDoan, batThuongChuaTraLoi, ngLan1,
     nguoiLap: 'Hồ Văn Đảng — Giám đốc Sản xuất', ngayBaoCao: '06/07/2026'
   };
 })();
@@ -498,7 +585,6 @@ function buildGroupedMonthly(rows, groupField, groupValue, valueField){
   return arr;
 }
 function theoDoiTraVe(v){ return String(v||'').trim().toLowerCase() !== 'khong'; }
-function isConfigured(){ return Object.values(CSV_URLS).every(u => u && !u.startsWith('PASTE_')); }
 function isAppsScriptConfigured(){ return APPS_SCRIPT_URL && !APPS_SCRIPT_URL.startsWith('PASTE_'); }
 
 function buildDataModel(raw){
@@ -572,9 +658,34 @@ function buildDataModel(raw){
   const cfg = {};
   (raw.config||[]).forEach(r=>{ cfg[r['Key']] = r['Value']; });
 
+  const batThuong = {
+    khTotal: toMonthArray(raw.batThuongThang,'KH_TongSo'),
+    khClosed: toMonthArray(raw.batThuongThang,'KH_DaDoiSach'),
+    nbTotal: toMonthArray(raw.batThuongThang,'NB_TongSo'),
+    nbClosed: toMonthArray(raw.batThuongThang,'NB_DaDoiSach')
+  };
+  const batThuongKHCongDoan = {
+    Duc: toMonthArray(raw.batThuongKH,'Duc'), Bavia: toMonthArray(raw.batThuongKH,'Bavia'),
+    GiaCong: toMonthArray(raw.batThuongKH,'GiaCong'), Son: toMonthArray(raw.batThuongKH,'Son')
+  };
+  const batThuongNBCongDoan = {
+    Duc: toMonthArray(raw.batThuongNB,'Duc'), Bavia: toMonthArray(raw.batThuongNB,'Bavia'),
+    GiaCong: toMonthArray(raw.batThuongNB,'GiaCong'), Son: toMonthArray(raw.batThuongNB,'Son')
+  };
+  const batThuongChuaTraLoi = {Duc:0, Bavia:0, GiaCong:0, Son:0};
+  (raw.batThuongChuaTraLoi||[]).forEach(r=>{
+    const k = (r['CongDoan']||'').trim();
+    if (k in batThuongChuaTraLoi) batThuongChuaTraLoi[k] = toNum(r['SoVu']) ?? 0;
+  });
+  const ngLan1 = {
+    Duc: toMonthArray(raw.ngLan1,'Duc'), Bavia: toMonthArray(raw.ngLan1,'Bavia'),
+    GiaCong: toMonthArray(raw.ngLan1,'GiaCong'), Son: toMonthArray(raw.ngLan1,'Son')
+  };
+
   return {
     internalTotal, returnTotal, bonusPoints, internalByCustomer, returnByCustomer,
     processes, returnNotTracked, qcDaily, qcRepaint, comments,
+    batThuong, batThuongKHCongDoan, batThuongNBCongDoan, batThuongChuaTraLoi, ngLan1,
     nguoiLap: cfg['NguoiLap'] || '—', ngayBaoCao: cfg['NgayBaoCao'] || '—'
   };
 }
@@ -848,6 +959,65 @@ function renderDashboard(data){
     wireAllCommentBoxes(document.getElementById('overview'), data.comments);
     wireAllCommentBoxes(document.getElementById('process'), data.comments);
     wireAllCommentBoxes(document.getElementById('customer'), data.comments);
+
+    // ---- build "Bất thường chất lượng" tab ----
+    document.getElementById('cmtHolder_batthuong_khbar').innerHTML = commentBoxHTML('batthuong_khbar', 'Comment');
+    document.getElementById('cmtHolder_batthuong_nbbar').innerHTML = commentBoxHTML('batthuong_nbbar', 'Comment');
+    document.getElementById('cmtHolder_batthuong_pie1').innerHTML = commentBoxHTML('batthuong_pie1', 'Comment');
+    document.getElementById('cmtHolder_batthuong_pie2').innerHTML = commentBoxHTML('batthuong_pie2', 'Comment');
+    document.getElementById('cmtHolder_batthuong_pie3').innerHTML = commentBoxHTML('batthuong_pie3', 'Comment');
+    document.getElementById('cmtHolder_ng_lan1').innerHTML = commentBoxHTML('ng_lan1', 'Comment');
+
+    track('bt_kh', new Chart(document.getElementById('chartBatThuongKH'), {
+      type:'bar',
+      data:{labels:monthsFull, datasets:[
+        {label:'Số vụ phát sinh', data:data.batThuong.khTotal, backgroundColor:palette.orange, borderRadius:4},
+        {label:'Đã có đối sách', data:data.batThuong.khClosed, backgroundColor:palette.good, borderRadius:4}
+      ]},
+      options:{plugins:{legend:{position:'bottom', labels:{boxWidth:12}}}, scales:{y:{ticks:{precision:0}, grid:{color:palette.line}}}}
+    }));
+    track('bt_nb', new Chart(document.getElementById('chartBatThuongNB'), {
+      type:'bar',
+      data:{labels:monthsFull, datasets:[
+        {label:'Số vụ phát sinh', data:data.batThuong.nbTotal, backgroundColor:palette.orange, borderRadius:4},
+        {label:'Đã có đối sách', data:data.batThuong.nbClosed, backgroundColor:palette.good, borderRadius:4}
+      ]},
+      options:{plugins:{legend:{position:'bottom', labels:{boxWidth:12}}}, scales:{y:{ticks:{precision:0}, grid:{color:palette.line}}}}
+    }));
+
+    const pieOpts = {plugins:{legend:{position:'bottom', labels:{boxWidth:11, font:{size:11}}}}};
+    const congDoanLabels = ['Đúc','Bavia','Gia công','Sơn'];
+    const congDoanColors = [palette.orange, palette.good, '#3E6A8F', palette.bad];
+    track('bt_pie1', new Chart(document.getElementById('chartPieKH'), {
+      type:'pie',
+      data:{labels:congDoanLabels, datasets:[{data:sumUpTo(data.batThuongKHCongDoan, reportIdx), backgroundColor:congDoanColors}]},
+      options:pieOpts
+    }));
+    track('bt_pie2', new Chart(document.getElementById('chartPieNB'), {
+      type:'pie',
+      data:{labels:congDoanLabels, datasets:[{data:sumUpTo(data.batThuongNBCongDoan, reportIdx), backgroundColor:congDoanColors}]},
+      options:pieOpts
+    }));
+    track('bt_pie3', new Chart(document.getElementById('chartPieChuaTraLoi'), {
+      type:'pie',
+      data:{labels:congDoanLabels, datasets:[{data:[data.batThuongChuaTraLoi.Duc, data.batThuongChuaTraLoi.Bavia, data.batThuongChuaTraLoi.GiaCong, data.batThuongChuaTraLoi.Son], backgroundColor:congDoanColors}]},
+      options:pieOpts
+    }));
+
+    // ---- build "Tỷ lệ NG lần 1" tab (placeholder, no data yet) ----
+    track('ng_lan1', new Chart(document.getElementById('chartNGLan1'), {
+      type:'line',
+      data:{labels:monthsFull, datasets:[
+        {label:'Đúc', data:data.ngLan1.Duc, borderColor:congDoanColors[0], backgroundColor:congDoanColors[0], tension:.3, pointRadius:4, borderWidth:3, spanGaps:false},
+        {label:'Bavia', data:data.ngLan1.Bavia, borderColor:congDoanColors[1], backgroundColor:congDoanColors[1], tension:.3, pointRadius:4, borderWidth:3, spanGaps:false},
+        {label:'Gia công', data:data.ngLan1.GiaCong, borderColor:congDoanColors[2], backgroundColor:congDoanColors[2], tension:.3, pointRadius:4, borderWidth:3, spanGaps:false},
+        {label:'Sơn', data:data.ngLan1.Son, borderColor:congDoanColors[3], backgroundColor:congDoanColors[3], tension:.3, pointRadius:4, borderWidth:3, spanGaps:false}
+      ]},
+      options:{plugins:{legend:{position:'bottom', labels:{boxWidth:12}}}, scales:{y:{ticks:{callback:v=>v+'%'}}}}
+    }));
+
+    wireAllCommentBoxes(document.getElementById('batthuong'), data.comments);
+    wireAllCommentBoxes(document.getElementById('nglan1'), data.comments);
     structureBuilt = true;
 
   } else {
@@ -890,6 +1060,25 @@ function renderDashboard(data){
       const badgeEl2 = document.getElementById('mxBadgeInt_'+id);
       if (badgeEl2) badgeEl2.innerHTML = evalBadge(iSeries[reportIdx], idData.target, reportIdx);
     });
+
+    // ---- update batThuong + ngLan1 charts ----
+    chartsByKey.bt_kh.data.datasets[0].data = data.batThuong.khTotal;
+    chartsByKey.bt_kh.data.datasets[1].data = data.batThuong.khClosed;
+    chartsByKey.bt_kh.update();
+    chartsByKey.bt_nb.data.datasets[0].data = data.batThuong.nbTotal;
+    chartsByKey.bt_nb.data.datasets[1].data = data.batThuong.nbClosed;
+    chartsByKey.bt_nb.update();
+    chartsByKey.bt_pie1.data.datasets[0].data = sumUpTo(data.batThuongKHCongDoan, reportIdx);
+    chartsByKey.bt_pie1.update();
+    chartsByKey.bt_pie2.data.datasets[0].data = sumUpTo(data.batThuongNBCongDoan, reportIdx);
+    chartsByKey.bt_pie2.update();
+    chartsByKey.bt_pie3.data.datasets[0].data = [data.batThuongChuaTraLoi.Duc, data.batThuongChuaTraLoi.Bavia, data.batThuongChuaTraLoi.GiaCong, data.batThuongChuaTraLoi.Son];
+    chartsByKey.bt_pie3.update();
+    chartsByKey.ng_lan1.data.datasets[0].data = data.ngLan1.Duc;
+    chartsByKey.ng_lan1.data.datasets[1].data = data.ngLan1.Bavia;
+    chartsByKey.ng_lan1.data.datasets[2].data = data.ngLan1.GiaCong;
+    chartsByKey.ng_lan1.data.datasets[3].data = data.ngLan1.Son;
+    chartsByKey.ng_lan1.update();
   }
 
   // Process table — plain <td> text, safe to redraw every refresh
@@ -909,6 +1098,8 @@ function renderDashboard(data){
   wireAllCommentBoxes(document.getElementById('overview'), data.comments);
   wireAllCommentBoxes(document.getElementById('process'), data.comments);
   wireAllCommentBoxes(document.getElementById('customer'), data.comments);
+  wireAllCommentBoxes(document.getElementById('batthuong'), data.comments);
+  wireAllCommentBoxes(document.getElementById('nglan1'), data.comments);
 
   const box = document.getElementById('conclusionBox');
   applyCommentValue(box, data.comments);
@@ -956,6 +1147,11 @@ function nowStr(){
   const d = new Date();
   return d.toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'}) + ' ' + d.toLocaleDateString('vi-VN');
 }
+const CORE_KEYS = ['tongHop','theoKhachHang','theoCongDoan','qcDaily','qcRepaint','targets','comments','config'];
+const EXTRA_KEYS = ['batThuongThang','batThuongKH','batThuongNB','batThuongChuaTraLoi','ngLan1'];
+function isUrlSet(u){ return u && !u.startsWith('PASTE_'); }
+function isConfigured(){ return CORE_KEYS.every(k => isUrlSet(CSV_URLS[k])); }
+
 async function loadData(){
   const btn = document.getElementById('btnRefresh');
   btn.disabled = true;
@@ -972,9 +1168,15 @@ async function loadData(){
       fetchCSV(CSV_URLS.qcDaily), fetchCSV(CSV_URLS.qcRepaint), fetchCSV(CSV_URLS.targets),
       fetchCSV(CSV_URLS.comments), fetchCSV(CSV_URLS.config)
     ]);
-    const data = buildDataModel({tongHop, theoKhachHang, theoCongDoan, qcDaily, qcRepaint, targets, comments, config});
+    // The 5 "Bất thường chất lượng" / "NG lần 1" sheets are optional — if not yet published,
+    // those tabs just show blank/zero instead of taking down the whole (already-working) dashboard.
+    const extraSettled = await Promise.allSettled(EXTRA_KEYS.map(k => isUrlSet(CSV_URLS[k]) ? fetchCSV(CSV_URLS[k]) : Promise.resolve([])));
+    const [batThuongThang, batThuongKH, batThuongNB, batThuongChuaTraLoi, ngLan1] = extraSettled.map(r => r.status === 'fulfilled' ? r.value : []);
+    const data = buildDataModel({tongHop, theoKhachHang, theoCongDoan, qcDaily, qcRepaint, targets, comments, config, batThuongThang, batThuongKH, batThuongNB, batThuongChuaTraLoi, ngLan1});
     renderDashboard(data);
-    setBanner('live', `🟢 Dữ liệu trực tuyến — cập nhật lúc ${nowStr()} · tự động làm mới mỗi 5 phút`);
+    const missingExtra = EXTRA_KEYS.filter(k => !isUrlSet(CSV_URLS[k])).length;
+    const extraNote = missingExtra ? ` · ${missingExtra}/5 sheet "Bất thường/NG lần 1" chưa cấu hình` : '';
+    setBanner('live', `🟢 Dữ liệu trực tuyến — cập nhật lúc ${nowStr()} · tự động làm mới mỗi 5 phút${extraNote}`);
   } catch(err){
     console.error('Lỗi tải dữ liệu Google Sheet:', err);
     const isFetchFail = err instanceof TypeError;
