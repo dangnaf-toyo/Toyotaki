@@ -102,11 +102,13 @@
   .comment-label .dot{width:7px;height:7px;border-radius:50%;background:var(--tk-orange);}
   .comment-label .src{font-weight:400;text-transform:none;letter-spacing:0;font-style:italic;color:var(--tk-muted);margin-left:auto;font-size:10.5px;}
   .comment-edit{
+    display:block;width:100%;box-sizing:border-box;
     border:1.5px dashed var(--tk-line);border-radius:8px;padding:12px 14px;font-size:13px;line-height:1.55;
     min-height:60px;background:#FFFDFA;outline:none;color:#3b382f;white-space:pre-wrap;
+    font-family:'Work Sans',sans-serif;resize:vertical;
   }
   .comment-edit:focus{border-color:var(--tk-orange);background:#fff;}
-  .comment-edit:empty:before{content:attr(data-placeholder);color:var(--tk-muted);font-style:italic;}
+  .comment-edit::placeholder{color:var(--tk-muted);font-style:italic;opacity:1;}
   .comment-save-row{display:flex;align-items:center;gap:10px;margin-top:8px;}
   .save-btn{
     background:var(--tk-navy);color:#fff;border:none;padding:6px 14px;border-radius:100px;font-size:11.5px;font-weight:600;
@@ -218,7 +220,7 @@
         <div class="chart-box wide"><canvas id="chartGHDH"></canvas></div>
         <div class="comment-box">
           <div class="comment-label"><span class="dot"></span>Ghi chú / Comment tháng hiện tại<span class="src">đồng bộ từ Google Sheet · tab Comments</span></div>
-          <div class="comment-edit" id="cmt-giaohang" contenteditable="true" spellcheck="false" data-placeholder="Nhập nhận xét về tình hình giao hàng..."></div>
+          <textarea class="comment-edit" id="cmt-giaohang" spellcheck="false" placeholder="Nhập nhận xét về tình hình giao hàng..."></textarea>
         </div>
       </div>
     </section>
@@ -240,7 +242,7 @@
           <div class="chart-box"><canvas id="chartDuc"></canvas></div>
           <div class="comment-box">
             <div class="comment-label"><span class="dot"></span>Ghi chú / Comment<span class="src">Google Sheet</span></div>
-            <div class="comment-edit" id="cmt-duc" contenteditable="true" spellcheck="false" data-placeholder="Nhập nhận xét..."></div>
+            <textarea class="comment-edit" id="cmt-duc" spellcheck="false" placeholder="Nhập nhận xét..."></textarea>
           </div>
         </div>
         <div class="card">
@@ -249,7 +251,7 @@
           <div class="chart-box"><canvas id="chartBavia"></canvas></div>
           <div class="comment-box">
             <div class="comment-label"><span class="dot"></span>Ghi chú / Comment<span class="src">Google Sheet</span></div>
-            <div class="comment-edit" id="cmt-bavia" contenteditable="true" spellcheck="false" data-placeholder="Nhập nhận xét..."></div>
+            <textarea class="comment-edit" id="cmt-bavia" spellcheck="false" placeholder="Nhập nhận xét..."></textarea>
           </div>
         </div>
         <div class="card">
@@ -258,7 +260,7 @@
           <div class="chart-box"><canvas id="chartGiaCong"></canvas></div>
           <div class="comment-box">
             <div class="comment-label"><span class="dot"></span>Ghi chú / Comment<span class="src">Google Sheet</span></div>
-            <div class="comment-edit" id="cmt-giacong" contenteditable="true" spellcheck="false" data-placeholder="Nhập nhận xét..."></div>
+            <textarea class="comment-edit" id="cmt-giacong" spellcheck="false" placeholder="Nhập nhận xét..."></textarea>
           </div>
         </div>
         <div class="card">
@@ -267,7 +269,7 @@
           <div class="chart-box"><canvas id="chartSon"></canvas></div>
           <div class="comment-box">
             <div class="comment-label"><span class="dot"></span>Ghi chú / Comment<span class="src">Google Sheet</span></div>
-            <div class="comment-edit" id="cmt-son" contenteditable="true" spellcheck="false" data-placeholder="Nhập nhận xét..."></div>
+            <textarea class="comment-edit" id="cmt-son" spellcheck="false" placeholder="Nhập nhận xét..."></textarea>
           </div>
         </div>
       </div>
@@ -294,7 +296,7 @@
           <div class="chart-box"><canvas id="chartCapa350"></canvas></div>
           <div class="comment-box">
             <div class="comment-label"><span class="dot"></span>Comment<span class="src">Google Sheet</span></div>
-            <div class="comment-edit" id="cmt-capa350" contenteditable="true" spellcheck="false" data-placeholder="Nhập nhận xét..."></div>
+            <textarea class="comment-edit" id="cmt-capa350" spellcheck="false" placeholder="Nhập nhận xét..."></textarea>
           </div>
         </div>
         <div class="card">
@@ -303,7 +305,7 @@
           <div class="chart-box"><canvas id="chartCapa850"></canvas></div>
           <div class="comment-box">
             <div class="comment-label"><span class="dot"></span>Comment<span class="src">Google Sheet</span></div>
-            <div class="comment-edit" id="cmt-capa850" contenteditable="true" spellcheck="false" data-placeholder="Nhập nhận xét..."></div>
+            <textarea class="comment-edit" id="cmt-capa850" spellcheck="false" placeholder="Nhập nhận xét..."></textarea>
           </div>
         </div>
         <div class="card">
@@ -312,7 +314,7 @@
           <div class="chart-box"><canvas id="chartCapaGC"></canvas></div>
           <div class="comment-box">
             <div class="comment-label"><span class="dot"></span>Comment<span class="src">Google Sheet</span></div>
-            <div class="comment-edit" id="cmt-capaGC" contenteditable="true" spellcheck="false" data-placeholder="Nhập nhận xét..."></div>
+            <textarea class="comment-edit" id="cmt-capaGC" spellcheck="false" placeholder="Nhập nhận xét..."></textarea>
           </div>
         </div>
       </div>
@@ -341,11 +343,11 @@
       <div class="grid-2" style="margin-top:20px;">
         <div class="card">
           <div class="comment-label"><span class="dot"></span>Nội dung đối ứng đáp ứng sản lượng tháng tới<span class="src">Google Sheet</span></div>
-          <div class="comment-edit" id="cmt-forecast-doiung" contenteditable="true" spellcheck="false" data-placeholder="Nhập kế hoạch đối ứng để đáp ứng forecast sản lượng tháng tới…" style="min-height:120px;"></div>
+          <textarea class="comment-edit" id="cmt-forecast-doiung" spellcheck="false" placeholder="Nhập kế hoạch đối ứng để đáp ứng forecast sản lượng tháng tới…" style="min-height:120px;"></textarea>
         </div>
         <div class="card">
           <div class="comment-label"><span class="dot"></span>Kế hoạch hoạt động trọng điểm ngoài sản xuất<span class="src">Google Sheet</span></div>
-          <div class="comment-edit" id="cmt-forecast-hoatdong" contenteditable="true" spellcheck="false" data-placeholder="Nhập các hoạt động trọng điểm ngoài sản xuất (đào tạo, cải tiến, đầu tư thiết bị...)…" style="min-height:120px;"></div>
+          <textarea class="comment-edit" id="cmt-forecast-hoatdong" spellcheck="false" placeholder="Nhập các hoạt động trọng điểm ngoài sản xuất (đào tạo, cải tiến, đầu tư thiết bị...)…" style="min-height:120px;"></textarea>
         </div>
       </div>
     </section>
@@ -701,7 +703,7 @@ function setComment(id, text){
   if (document.activeElement === el) return; // don't clobber while the user is typing
   const key = id.replace(/^cmt-/, '');
   if (savedRecently[key] && (Date.now() - savedRecently[key] < SAVED_GRACE_MS)) return;
-  if (text) el.textContent = unescapeForSheet(text);
+  if (text) el.value = unescapeForSheet(text);
 }
 
 function renderAll(data){
@@ -887,7 +889,7 @@ document.querySelectorAll('.comment-edit[id^="cmt-"]').forEach(el => {
   el.insertAdjacentElement('afterend', row);
   const btn = row.querySelector('.save-btn');
   const status = row.querySelector('.save-status');
-  btn.addEventListener('click', () => saveComment(key, el.innerText.trim(), btn, status));
+  btn.addEventListener('click', () => saveComment(key, el.value.trim(), btn, status));
 });
 
 /* ---------- Tab switching ---------- */
