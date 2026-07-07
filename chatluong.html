@@ -333,14 +333,14 @@
    Leave as-is (starting with PASTE_) to keep using demo data.
    ========================================================================= */
 const CSV_URLS = {
-  tongHop:       'https://docs.google.com/spreadsheets/d/e/2PACX-1vSAseiF_WU7d5jEP0pNUPvQYgu0CMmmssR527y5rLpinWigJ9q2nyE2XdI6dscAkf47lJfHm0ii_muR/pub?gid=1828890824&single=true&output=csv',
+  tongHop: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSAseiF_WU7d5jEP0pNUPvQYgu0CMmmssR527y5rLpinWigJ9q2nyE2XdI6dscAkf47lJfHm0ii_muR/pub?gid=1828890824&single=true&output=csv',
   theoKhachHang: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSAseiF_WU7d5jEP0pNUPvQYgu0CMmmssR527y5rLpinWigJ9q2nyE2XdI6dscAkf47lJfHm0ii_muR/pub?gid=342438972&single=true&output=csv',
-  theoCongDoan:  'https://docs.google.com/spreadsheets/d/e/2PACX-1vSAseiF_WU7d5jEP0pNUPvQYgu0CMmmssR527y5rLpinWigJ9q2nyE2XdI6dscAkf47lJfHm0ii_muR/pub?gid=902066588&single=true&output=csv',
-  qcDaily:       'https://docs.google.com/spreadsheets/d/e/2PACX-1vSAseiF_WU7d5jEP0pNUPvQYgu0CMmmssR527y5rLpinWigJ9q2nyE2XdI6dscAkf47lJfHm0ii_muR/pub?gid=953026792&single=true&output=csv',
-  qcRepaint:     'https://docs.google.com/spreadsheets/d/e/2PACX-1vSAseiF_WU7d5jEP0pNUPvQYgu0CMmmssR527y5rLpinWigJ9q2nyE2XdI6dscAkf47lJfHm0ii_muR/pub?gid=560817531&single=true&output=csv',
-  targets:       'https://docs.google.com/spreadsheets/d/e/2PACX-1vSAseiF_WU7d5jEP0pNUPvQYgu0CMmmssR527y5rLpinWigJ9q2nyE2XdI6dscAkf47lJfHm0ii_muR/pub?gid=356174980&single=true&output=csv',
-  comments:      'https://docs.google.com/spreadsheets/d/e/2PACX-1vSAseiF_WU7d5jEP0pNUPvQYgu0CMmmssR527y5rLpinWigJ9q2nyE2XdI6dscAkf47lJfHm0ii_muR/pub?gid=1687982602&single=true&output=csv',
-  config:        'https://docs.google.com/spreadsheets/d/e/2PACX-1vSAseiF_WU7d5jEP0pNUPvQYgu0CMmmssR527y5rLpinWigJ9q2nyE2XdI6dscAkf47lJfHm0ii_muR/pub?gid=925884044&single=true&output=csv'
+  theoCongDoan: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSAseiF_WU7d5jEP0pNUPvQYgu0CMmmssR527y5rLpinWigJ9q2nyE2XdI6dscAkf47lJfHm0ii_muR/pub?gid=902066588&single=true&output=csv',
+  qcDaily: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSAseiF_WU7d5jEP0pNUPvQYgu0CMmmssR527y5rLpinWigJ9q2nyE2XdI6dscAkf47lJfHm0ii_muR/pub?gid=953026792&single=true&output=csv',
+  qcRepaint: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSAseiF_WU7d5jEP0pNUPvQYgu0CMmmssR527y5rLpinWigJ9q2nyE2XdI6dscAkf47lJfHm0ii_muR/pub?gid=560817531&single=true&output=csv',
+  targets: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSAseiF_WU7d5jEP0pNUPvQYgu0CMmmssR527y5rLpinWigJ9q2nyE2XdI6dscAkf47lJfHm0ii_muR/pub?gid=356174980&single=true&output=csv',
+  comments: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSAseiF_WU7d5jEP0pNUPvQYgu0CMmmssR527y5rLpinWigJ9q2nyE2XdI6dscAkf47lJfHm0ii_muR/pub?gid=1687982602&single=true&output=csv',
+  config: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSAseiF_WU7d5jEP0pNUPvQYgu0CMmmssR527y5rLpinWigJ9q2nyE2XdI6dscAkf47lJfHm0ii_muR/pub?gid=925884044&single=true&output=csv'
 };
 const AUTO_REFRESH_MS = 5 * 60 * 1000; // 5 minutes
 
@@ -649,18 +649,22 @@ function wireAllCommentBoxes(root, comments){
 
 /* ---------- Chart lifecycle ---------- */
 let allCharts = [];
-const chartsByTab = {overview:[], process:[], customer:[]};
-function destroyAllCharts(){ allCharts.forEach(c=>{ try{ c.destroy(); }catch(e){} }); allCharts = []; chartsByTab.overview=[]; chartsByTab.process=[]; chartsByTab.customer=[]; }
-function track(tab, chart){ allCharts.push(chart); chartsByTab[tab].push(chart); return chart; }
+const chartsByKey = {};
+let structureBuilt = false;
+function track(key, chart){ allCharts.push(chart); chartsByKey[key] = chart; return chart; }
 
 function targetLine(value, label){
   return {label, data:targetArr(value), borderColor:palette.muted, borderDash:[5,4], borderWidth:2, pointRadius:0, fill:false, spanGaps:true};
 }
 
-/* ---------- Main render ---------- */
+/* ---------- Main render ----------
+   IMPORTANT: procChartGrid / custMatrix used to be rebuilt via innerHTML on every single
+   refresh (every 5 min). That destroyed and recreated every <textarea>, which wiped out
+   any manual resize the user had done AND could momentarily render them blank before the
+   comment text was re-applied. Structure is now built ONCE; every later refresh only
+   updates chart data and comment values in place, leaving the DOM nodes (and their
+   user-resized dimensions) untouched. */
 function renderDashboard(data){
-  destroyAllCharts();
-
   const reportIdx = (() => {
     for (let i=11;i>=0;i--){ if (data.internalTotal.prod[i]!=null) return i; }
     return REPORT_IDX_FALLBACK;
@@ -673,7 +677,7 @@ function renderDashboard(data){
   const internalT = rateOrNull(data.internalTotal.ng[reportIdx], data.internalTotal.prod[reportIdx]);
   const returnT = rateOrNull(data.returnTotal.ret[reportIdx], data.returnTotal.ship[reportIdx]);
 
-  // KPI cards
+  // KPI cards — plain text/badges, safe to redraw every refresh
   const kpiRow = document.getElementById('kpiRow');
   const kpis = [
     {eyebrow:`Sản lượng sản xuất T${reportIdx+1}`, big:fmtInt(data.internalTotal.prod[reportIdx]), sub:'chiếc, công đoạn đúc', pill:null},
@@ -693,65 +697,202 @@ function renderDashboard(data){
   document.getElementById('badgeVolume').innerHTML = evalBadge(internalT, data.internalTotal.target, reportIdx);
   document.getElementById('badgePoints').innerHTML = evalPointsBadge(data.bonusPoints[reportIdx], reportIdx);
 
-  track('overview', new Chart(document.getElementById('chartInternalTrend'), {
-    type:'line',
-    data:{labels:monthsFull, datasets:[
-      {label:'Thực tế', data:seriesRate(data.internalTotal), borderColor:palette.orange, backgroundColor:palette.orange, tension:.3, pointRadius:4, borderWidth:3, spanGaps:false},
-      targetLine(data.internalTotal.target,'Mục tiêu ('+fmtPct(data.internalTotal.target)+')')
-    ]},
-    options:{plugins:{legend:{position:'bottom', labels:{boxWidth:12}}}, scales:{y:{ticks:{callback:v=>v+'%'}}}}
-  }));
-  track('overview', new Chart(document.getElementById('chartReturnTrend'), {
-    type:'line',
-    data:{labels:monthsFull, datasets:[
-      {label:'Thực tế', data:retSeriesRate(data.returnTotal), borderColor:palette.bad, backgroundColor:palette.bad, tension:.3, pointRadius:4, borderWidth:3, spanGaps:false},
-      targetLine(data.returnTotal.target,'Mục tiêu ('+fmtPct(data.returnTotal.target)+')')
-    ]},
-    options:{plugins:{legend:{position:'bottom', labels:{boxWidth:12}}}, scales:{y:{ticks:{callback:v=>v+'%'}}}}
-  }));
-  track('overview', new Chart(document.getElementById('chartVolume'), {
-    type:'bar',
-    data:{labels:monthsFull, datasets:[
-      {label:'Sản lượng SX', data:data.internalTotal.prod, backgroundColor:'#E8DAC0', yAxisID:'y'},
-      {label:'SL báo phế', data:data.internalTotal.ng, backgroundColor:palette.bad, yAxisID:'y1'}
-    ]},
-    options:{plugins:{legend:{position:'bottom', labels:{boxWidth:12}}}, scales:{
-      y:{position:'left', title:{display:true,text:'Sản lượng SX'}},
-      y1:{position:'right', title:{display:true,text:'Báo phế'}, grid:{drawOnChartArea:false}}
-    }}
-  }));
-  track('overview', new Chart(document.getElementById('chartPoints'), {
-    type:'bar',
-    data:{labels:monthsFull, datasets:[{label:'Điểm', data:data.bonusPoints, backgroundColor:data.bonusPoints.map(v=>v==null?palette.line:(v>=0?palette.good:palette.bad)), borderRadius:5}]},
-    options:{plugins:{legend:{display:false}}, scales:{y:{grid:{color:palette.line}}}}
-  }));
-  wireAllCommentBoxes(document.getElementById('overview'), data.comments);
-
-  // ---- process tab ----
-  const procChartGrid = document.getElementById('procChartGrid');
   const procNames = Object.keys(data.processes);
-  procChartGrid.innerHTML = procNames.map((n)=>{
-    const d = data.processes[n]; const rs = seriesRate(d);
-    return `
-    <div class="panel">
-      <div class="panel-head"><h3>${procLabel(n)}</h3><span>${evalBadge(rs[reportIdx], d.target, reportIdx)}</span></div>
-      <p class="desc">Tháng 1–Tháng 12 · Mục tiêu ${fmtPct(d.target)}</p>
-      <canvas id="procChart_${n.replace(/\W/g,'')}"></canvas>
-      ${commentBoxHTML(processCommentKey(n), `Comment — Tháng ${reportIdx+1} (tháng báo cáo)`)}
-    </div>`;
-  }).join('');
-  procNames.forEach((n,i)=>{
-    const d = data.processes[n];
-    track('process', new Chart(document.getElementById('procChart_'+n.replace(/\W/g,'')), {
+  const custNames = Object.keys(data.internalByCustomer);
+
+  if (!structureBuilt){
+    // ---- build overview charts (canvases are static HTML, created once) ----
+    track('ov_internal', new Chart(document.getElementById('chartInternalTrend'), {
       type:'line',
       data:{labels:monthsFull, datasets:[
-        {label:'Thực tế', data:seriesRate(d), borderColor:lineColors[i%lineColors.length], backgroundColor:lineColors[i%lineColors.length], tension:.3, pointRadius:4, borderWidth:3, spanGaps:false},
-        targetLine(d.target,'Mục tiêu')
+        {label:'Thực tế', data:seriesRate(data.internalTotal), borderColor:palette.orange, backgroundColor:palette.orange, tension:.3, pointRadius:4, borderWidth:3, spanGaps:false},
+        targetLine(data.internalTotal.target,'Mục tiêu ('+fmtPct(data.internalTotal.target)+')')
       ]},
       options:{plugins:{legend:{position:'bottom', labels:{boxWidth:12}}}, scales:{y:{ticks:{callback:v=>v+'%'}}}}
     }));
-  });
+    track('ov_return', new Chart(document.getElementById('chartReturnTrend'), {
+      type:'line',
+      data:{labels:monthsFull, datasets:[
+        {label:'Thực tế', data:retSeriesRate(data.returnTotal), borderColor:palette.bad, backgroundColor:palette.bad, tension:.3, pointRadius:4, borderWidth:3, spanGaps:false},
+        targetLine(data.returnTotal.target,'Mục tiêu ('+fmtPct(data.returnTotal.target)+')')
+      ]},
+      options:{plugins:{legend:{position:'bottom', labels:{boxWidth:12}}}, scales:{y:{ticks:{callback:v=>v+'%'}}}}
+    }));
+    track('ov_volume', new Chart(document.getElementById('chartVolume'), {
+      type:'bar',
+      data:{labels:monthsFull, datasets:[
+        {label:'Sản lượng SX', data:data.internalTotal.prod, backgroundColor:'#E8DAC0', yAxisID:'y'},
+        {label:'SL báo phế', data:data.internalTotal.ng, backgroundColor:palette.bad, yAxisID:'y1'}
+      ]},
+      options:{plugins:{legend:{position:'bottom', labels:{boxWidth:12}}}, scales:{
+        y:{position:'left', title:{display:true,text:'Sản lượng SX'}},
+        y1:{position:'right', title:{display:true,text:'Báo phế'}, grid:{drawOnChartArea:false}}
+      }}
+    }));
+    track('ov_points', new Chart(document.getElementById('chartPoints'), {
+      type:'bar',
+      data:{labels:monthsFull, datasets:[{label:'Điểm', data:data.bonusPoints, backgroundColor:data.bonusPoints.map(v=>v==null?palette.line:(v>=0?palette.good:palette.bad)), borderRadius:5}]},
+      options:{plugins:{legend:{display:false}}, scales:{y:{grid:{color:palette.line}}}}
+    }));
 
+    // ---- build process tab (grid HTML + charts) ----
+    const procChartGrid = document.getElementById('procChartGrid');
+    procChartGrid.innerHTML = procNames.map((n)=>{
+      const d = data.processes[n]; const rs = seriesRate(d);
+      return `
+      <div class="panel">
+        <div class="panel-head"><h3>${procLabel(n)}</h3><span id="procBadge_${n.replace(/\W/g,'')}">${evalBadge(rs[reportIdx], d.target, reportIdx)}</span></div>
+        <p class="desc">Tháng 1–Tháng 12 · Mục tiêu ${fmtPct(d.target)}</p>
+        <canvas id="procChart_${n.replace(/\W/g,'')}"></canvas>
+        ${commentBoxHTML(processCommentKey(n), `Comment — Tháng báo cáo`)}
+      </div>`;
+    }).join('');
+    procNames.forEach((n,i)=>{
+      const d = data.processes[n];
+      track('proc_'+n, new Chart(document.getElementById('procChart_'+n.replace(/\W/g,'')), {
+        type:'line',
+        data:{labels:monthsFull, datasets:[
+          {label:'Thực tế', data:seriesRate(d), borderColor:lineColors[i%lineColors.length], backgroundColor:lineColors[i%lineColors.length], tension:.3, pointRadius:4, borderWidth:3, spanGaps:false},
+          targetLine(d.target,'Mục tiêu')
+        ]},
+        options:{plugins:{legend:{position:'bottom', labels:{boxWidth:12}}}, scales:{y:{ticks:{callback:v=>v+'%'}}}}
+      }));
+    });
+
+    track('qcDaily', new Chart(document.getElementById('chartDailyNG'), {
+      type: 'bar',
+      data: {
+        labels: data.qcDaily.dates,
+        datasets: [
+          {label: 'Tổng SL NG', data: data.qcDaily.counts, backgroundColor: palette.bad, yAxisID: 'y', borderRadius: 4},
+          {label: 'Tỷ lệ % NG', data: data.qcDaily.pcts, borderColor: palette.orange, backgroundColor: palette.orange, type: 'line', yAxisID: 'y1', tension: .3, pointRadius: 3, borderWidth: 2.5}
+        ]
+      },
+      options: {
+        plugins: {legend: {position: 'bottom', labels: {boxWidth: 12}}},
+        scales: {
+          y: {position: 'left', title: {display: true, text: 'Số lượng NG'}, ticks: {font: {size: 10}}},
+          y1: {position: 'right', title: {display: true, text: 'Tỷ lệ %'}, ticks: {font: {size: 10}, callback: v => v+'%'}, grid: {drawOnChartArea: false}}
+        }
+      }
+    }));
+    track('qcRepaint', new Chart(document.getElementById('chartRepaintCmp'), {
+      type: 'bar',
+      data: {
+        labels: ['Sơn lần 1','Sơn lại'],
+        datasets: [{label: 'Tỷ lệ NG (%)', data: [data.qcRepaint.sonLan1, data.qcRepaint.sonLai], backgroundColor: [palette.good, palette.orange], borderRadius: 4}]
+      },
+      options: {
+        plugins: {legend: {display: false}},
+        scales: { x: {stacked: false}, y: {ticks: {callback: v => v.toFixed ? v.toFixed(1)+'%' : v+'%'}, max: 100} }
+      }
+    }));
+
+    // ---- build customer matrix (grid HTML + charts) ----
+    const matrix = document.getElementById('custMatrix');
+    let matrixHTML = `<div class="mx-head">Khách hàng</div><div class="mx-head">Báo phế khách hàng trả về</div><div class="mx-head">Báo phế nội bộ (Đúc)</div>`;
+    custNames.forEach((n)=>{
+      const rd = data.returnByCustomer[n]; const idData = data.internalByCustomer[n];
+      const skipReturn = data.returnNotTracked.includes(n);
+      matrixHTML += `<div class="mx-name">${custLabel(n)}</div>`;
+      if (skipReturn){
+        matrixHTML += `<div class="mx-cell"><div class="mx-empty">Không quản lý chỉ tiêu này cho khách hàng ${custLabel(n)}</div></div>`;
+      } else {
+        const rSeries = retSeriesRate(rd);
+        matrixHTML += `
+          <div class="mx-cell">
+            <div class="mx-cell-head" id="mxBadgeRet_${n.replace(/\W/g,'')}">${evalBadge(rSeries[reportIdx], rd.target, reportIdx)}</div>
+            <div class="target-note">Mục tiêu: ${fmtPct(rd.target)}</div>
+            <div class="mini-canvas"><canvas id="mx_ret_${n.replace(/\W/g,'')}"></canvas></div>
+            ${commentBoxHTML(customerCommentKey(n,'return'), `Comment — Tháng báo cáo`)}
+          </div>`;
+      }
+      const iSeries = seriesRate(idData);
+      matrixHTML += `
+        <div class="mx-cell">
+          <div class="mx-cell-head" id="mxBadgeInt_${n.replace(/\W/g,'')}">${evalBadge(iSeries[reportIdx], idData.target, reportIdx)}</div>
+          <div class="target-note">Mục tiêu: ${fmtPct(idData.target)}</div>
+          <div class="mini-canvas"><canvas id="mx_int_${n.replace(/\W/g,'')}"></canvas></div>
+          ${commentBoxHTML(customerCommentKey(n,'internal'), `Comment — Tháng báo cáo`)}
+        </div>`;
+    });
+    matrix.innerHTML = matrixHTML;
+
+    const mxAxisOpts = {
+      responsive:true, maintainAspectRatio:false, layout:{padding:{right:4}},
+      plugins:{legend:{display:false}},
+      scales:{ x:{ticks:{font:{size:10}}, grid:{color:palette.line}}, y:{ticks:{font:{size:10}, callback:v=>v+'%'}, grid:{color:palette.line}} }
+    };
+    custNames.forEach((n)=>{
+      const rd = data.returnByCustomer[n]; const idData = data.internalByCustomer[n];
+      if (!data.returnNotTracked.includes(n)){
+        track('mx_ret_'+n, new Chart(document.getElementById('mx_ret_'+n.replace(/\W/g,'')), {
+          type:'line',
+          data:{labels:monthsFull, datasets:[
+            {data:retSeriesRate(rd), borderColor:palette.bad, backgroundColor:palette.bad, tension:.3, pointRadius:3, borderWidth:2.5, spanGaps:false},
+            {data:targetArr(rd.target), borderColor:palette.muted, borderDash:[4,3], borderWidth:1.5, pointRadius:0, spanGaps:true}
+          ]},
+          options:mxAxisOpts
+        }));
+      }
+      track('mx_int_'+n, new Chart(document.getElementById('mx_int_'+n.replace(/\W/g,'')), {
+        type:'line',
+        data:{labels:monthsFull, datasets:[
+          {data:seriesRate(idData), borderColor:palette.orange, backgroundColor:palette.orange, tension:.3, pointRadius:3, borderWidth:2.5, spanGaps:false},
+          {data:targetArr(idData.target), borderColor:palette.muted, borderDash:[4,3], borderWidth:1.5, pointRadius:0, spanGaps:true}
+        ]},
+        options:mxAxisOpts
+      }));
+    });
+
+    wireAllCommentBoxes(document.getElementById('overview'), data.comments);
+    wireAllCommentBoxes(document.getElementById('process'), data.comments);
+    wireAllCommentBoxes(document.getElementById('customer'), data.comments);
+    structureBuilt = true;
+
+  } else {
+    // ---- update-only path: just refresh chart data + text, DOM nodes (and any manual
+    // textarea resize) are left completely alone ----
+    chartsByKey.ov_internal.data.datasets[0].data = seriesRate(data.internalTotal); chartsByKey.ov_internal.update();
+    chartsByKey.ov_return.data.datasets[0].data = retSeriesRate(data.returnTotal); chartsByKey.ov_return.update();
+    chartsByKey.ov_volume.data.datasets[0].data = data.internalTotal.prod;
+    chartsByKey.ov_volume.data.datasets[1].data = data.internalTotal.ng; chartsByKey.ov_volume.update();
+    chartsByKey.ov_points.data.datasets[0].data = data.bonusPoints;
+    chartsByKey.ov_points.data.datasets[0].backgroundColor = data.bonusPoints.map(v=>v==null?palette.line:(v>=0?palette.good:palette.bad));
+    chartsByKey.ov_points.update();
+
+    procNames.forEach(n=>{
+      const d = data.processes[n]; const rs = seriesRate(d); const id = n.replace(/\W/g,'');
+      const c = chartsByKey['proc_'+n]; c.data.datasets[0].data = rs; c.update();
+      const badgeEl = document.getElementById('procBadge_'+id);
+      if (badgeEl) badgeEl.innerHTML = evalBadge(rs[reportIdx], d.target, reportIdx);
+    });
+    const dailyAvgNG = data.qcDaily.pcts.length ? (data.qcDaily.pcts.reduce((a,b)=>a+b,0) / data.qcDaily.pcts.length).toFixed(2) : '–';
+    document.getElementById('badgeDaily').innerHTML = `<span class="badge">${dailyAvgNG}% TB</span>`;
+    document.getElementById('badgeRepaint').innerHTML = `<span class="badge">Sơn lại: ${data.qcRepaint.sonLai ?? '–'}% | Lần 1: ${data.qcRepaint.sonLan1 ?? '–'}%</span>`;
+    chartsByKey.qcDaily.data.labels = data.qcDaily.dates;
+    chartsByKey.qcDaily.data.datasets[0].data = data.qcDaily.counts;
+    chartsByKey.qcDaily.data.datasets[1].data = data.qcDaily.pcts;
+    chartsByKey.qcDaily.update();
+    chartsByKey.qcRepaint.data.datasets[0].data = [data.qcRepaint.sonLan1, data.qcRepaint.sonLai];
+    chartsByKey.qcRepaint.update();
+
+    custNames.forEach(n=>{
+      const rd = data.returnByCustomer[n]; const idData = data.internalByCustomer[n]; const id = n.replace(/\W/g,'');
+      if (!data.returnNotTracked.includes(n) && chartsByKey['mx_ret_'+n]){
+        const rSeries = retSeriesRate(rd);
+        const c = chartsByKey['mx_ret_'+n]; c.data.datasets[0].data = rSeries; c.data.datasets[1].data = targetArr(rd.target); c.update();
+        const badgeEl = document.getElementById('mxBadgeRet_'+id);
+        if (badgeEl) badgeEl.innerHTML = evalBadge(rSeries[reportIdx], rd.target, reportIdx);
+      }
+      const iSeries = seriesRate(idData);
+      const ci = chartsByKey['mx_int_'+n]; ci.data.datasets[0].data = iSeries; ci.data.datasets[1].data = targetArr(idData.target); ci.update();
+      const badgeEl2 = document.getElementById('mxBadgeInt_'+id);
+      if (badgeEl2) badgeEl2.innerHTML = evalBadge(iSeries[reportIdx], idData.target, reportIdx);
+    });
+  }
+
+  // Process table — plain <td> text, safe to redraw every refresh
   const table = document.getElementById('processTable');
   let thead = '<thead><tr><th>Công đoạn</th><th>Mục tiêu</th>' + monthsFull.map(m=>`<th>${m}</th>`).join('') + '</tr></thead>';
   let tbody = '<tbody>' + procNames.map(n=>{
@@ -764,103 +905,13 @@ function renderDashboard(data){
   }).join('') + '</tbody>';
   table.innerHTML = thead + tbody;
 
-  // QC Ghế charts
-  const dailyAvgNG = data.qcDaily.pcts.length ? (data.qcDaily.pcts.reduce((a,b)=>a+b,0) / data.qcDaily.pcts.length).toFixed(2) : '–';
-  document.getElementById('badgeDaily').innerHTML = `<span class="badge">${dailyAvgNG}% TB</span>`;
-  document.getElementById('badgeRepaint').innerHTML = `<span class="badge">Sơn lại: ${data.qcRepaint.sonLai ?? '–'}% | Lần 1: ${data.qcRepaint.sonLan1 ?? '–'}%</span>`;
-  track('process', new Chart(document.getElementById('chartDailyNG'), {
-    type: 'bar',
-    data: {
-      labels: data.qcDaily.dates,
-      datasets: [
-        {label: 'Tổng SL NG', data: data.qcDaily.counts, backgroundColor: palette.bad, yAxisID: 'y', borderRadius: 4},
-        {label: 'Tỷ lệ % NG', data: data.qcDaily.pcts, borderColor: palette.orange, backgroundColor: palette.orange, type: 'line', yAxisID: 'y1', tension: .3, pointRadius: 3, borderWidth: 2.5}
-      ]
-    },
-    options: {
-      plugins: {legend: {position: 'bottom', labels: {boxWidth: 12}}},
-      scales: {
-        y: {position: 'left', title: {display: true, text: 'Số lượng NG'}, ticks: {font: {size: 10}}},
-        y1: {position: 'right', title: {display: true, text: 'Tỷ lệ %'}, ticks: {font: {size: 10}, callback: v => v+'%'}, grid: {drawOnChartArea: false}}
-      }
-    }
-  }));
-  track('process', new Chart(document.getElementById('chartRepaintCmp'), {
-    type: 'bar',
-    data: {
-      labels: ['Sơn lần 1','Sơn lại'],
-      datasets: [{label: 'Tỷ lệ NG (%)', data: [data.qcRepaint.sonLan1, data.qcRepaint.sonLai], backgroundColor: [palette.good, palette.orange], borderRadius: 4}]
-    },
-    options: {
-      plugins: {legend: {display: false}},
-      scales: { x: {stacked: false}, y: {ticks: {callback: v => v.toFixed ? v.toFixed(1)+'%' : v+'%'}, max: 100} }
-    }
-  }));
+  // Comments — value-only update (respects focus + just-saved grace period), never touches DOM structure
+  wireAllCommentBoxes(document.getElementById('overview'), data.comments);
   wireAllCommentBoxes(document.getElementById('process'), data.comments);
-
-  // ---- customer matrix ----
-  const custNames = Object.keys(data.internalByCustomer);
-  const matrix = document.getElementById('custMatrix');
-  let matrixHTML = `<div class="mx-head">Khách hàng</div><div class="mx-head">Báo phế khách hàng trả về</div><div class="mx-head">Báo phế nội bộ (Đúc)</div>`;
-  custNames.forEach((n)=>{
-    const rd = data.returnByCustomer[n]; const idData = data.internalByCustomer[n];
-    const skipReturn = data.returnNotTracked.includes(n);
-    matrixHTML += `<div class="mx-name">${custLabel(n)}</div>`;
-    if (skipReturn){
-      matrixHTML += `<div class="mx-cell"><div class="mx-empty">Không quản lý chỉ tiêu này cho khách hàng ${custLabel(n)}</div></div>`;
-    } else {
-      const rSeries = retSeriesRate(rd);
-      matrixHTML += `
-        <div class="mx-cell">
-          <div class="mx-cell-head">${evalBadge(rSeries[reportIdx], rd.target, reportIdx)}</div>
-          <div class="target-note">Mục tiêu: ${fmtPct(rd.target)}</div>
-          <div class="mini-canvas"><canvas id="mx_ret_${n.replace(/\W/g,'')}"></canvas></div>
-          ${commentBoxHTML(customerCommentKey(n,'return'), `Comment — Tháng ${reportIdx+1}`)}
-        </div>`;
-    }
-    const iSeries = seriesRate(idData);
-    matrixHTML += `
-      <div class="mx-cell">
-        <div class="mx-cell-head">${evalBadge(iSeries[reportIdx], idData.target, reportIdx)}</div>
-        <div class="target-note">Mục tiêu: ${fmtPct(idData.target)}</div>
-        <div class="mini-canvas"><canvas id="mx_int_${n.replace(/\W/g,'')}"></canvas></div>
-        ${commentBoxHTML(customerCommentKey(n,'internal'), `Comment — Tháng ${reportIdx+1}`)}
-      </div>`;
-  });
-  matrix.innerHTML = matrixHTML;
-
-  const mxAxisOpts = {
-    responsive:true, maintainAspectRatio:false, layout:{padding:{right:4}},
-    plugins:{legend:{display:false}},
-    scales:{ x:{ticks:{font:{size:10}}, grid:{color:palette.line}}, y:{ticks:{font:{size:10}, callback:v=>v+'%'}, grid:{color:palette.line}} }
-  };
-  custNames.forEach((n)=>{
-    const rd = data.returnByCustomer[n]; const idData = data.internalByCustomer[n];
-    if (!data.returnNotTracked.includes(n)){
-      track('customer', new Chart(document.getElementById('mx_ret_'+n.replace(/\W/g,'')), {
-        type:'line',
-        data:{labels:monthsFull, datasets:[
-          {data:retSeriesRate(rd), borderColor:palette.bad, backgroundColor:palette.bad, tension:.3, pointRadius:3, borderWidth:2.5, spanGaps:false},
-          {data:targetArr(rd.target), borderColor:palette.muted, borderDash:[4,3], borderWidth:1.5, pointRadius:0, spanGaps:true}
-        ]},
-        options:mxAxisOpts
-      }));
-    }
-    track('customer', new Chart(document.getElementById('mx_int_'+n.replace(/\W/g,'')), {
-      type:'line',
-      data:{labels:monthsFull, datasets:[
-        {data:seriesRate(idData), borderColor:palette.orange, backgroundColor:palette.orange, tension:.3, pointRadius:3, borderWidth:2.5, spanGaps:false},
-        {data:targetArr(idData.target), borderColor:palette.muted, borderDash:[4,3], borderWidth:1.5, pointRadius:0, spanGaps:true}
-      ]},
-      options:mxAxisOpts
-    }));
-  });
   wireAllCommentBoxes(document.getElementById('customer'), data.comments);
 
-  // ---- conclusion box ----
   const box = document.getElementById('conclusionBox');
   applyCommentValue(box, data.comments);
-  if (!box.value) box.value = unescapeForSheet(data.comments.conclusion || '');
 }
 
 /* ---------- Diagnostics ---------- */
@@ -946,7 +997,7 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
     btn.classList.add('active');
     const tabId = btn.dataset.tab;
     document.getElementById(tabId).classList.add('active');
-    requestAnimationFrame(() => { (chartsByTab[tabId] || []).forEach(c => c.resize()); });
+    requestAnimationFrame(() => { allCharts.forEach(c => c.resize()); });
   });
 });
 
