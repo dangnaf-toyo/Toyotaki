@@ -118,6 +118,7 @@
 
   @media (max-width:1000px){
     .kpi-row{grid-template-columns:repeat(2,1fr);}
+    #batThuongKpiRow{grid-template-columns:repeat(3,1fr) !important;}
     .grid-2{grid-template-columns:1fr;}
     .grid-3{grid-template-columns:1fr;}
     .proc-grid{grid-template-columns:1fr;}
@@ -257,14 +258,6 @@
 
     <div class="proc-grid" id="procChartGrid"></div>
 
-    <div class="panel" style="margin-top:16px;">
-      <h3>Bảng tỷ lệ báo phế theo tháng — tất cả công đoạn</h3>
-      <p class="desc">Tháng 1–Tháng 12 · ô đậm đỏ = không đạt mục tiêu · "–" = chưa có dữ liệu</p>
-      <div style="overflow-x:auto;">
-        <table id="processTable"></table>
-      </div>
-    </div>
-
     <h3 style="font-family:'Zilla Slab',serif; font-size:17px; margin:26px 0 12px;">Dữ liệu từ QC GHẾ — Tháng 6/2026</h3>
 
     <div class="grid-2">
@@ -304,6 +297,12 @@
   </section>
 
   <section class="view" id="batthuong">
+
+    <div class="panel">
+      <h3>Tổng quan số vụ bất thường</h3>
+      <p class="desc">Lũy kế từ đầu năm đến tháng báo cáo · Tỷ lệ trả lời = số vụ đã có đối sách / tổng số vụ phát sinh</p>
+      <div class="kpi-row" id="batThuongKpiRow" style="grid-template-columns:repeat(6,1fr);"></div>
+    </div>
 
     <div class="grid-2">
       <div class="panel">
@@ -805,6 +804,27 @@ function renderDashboard(data){
 
   document.getElementById('badgeInternal').innerHTML = evalBadge(internalT, data.internalTotal.target, reportIdx);
   document.getElementById('badgeReturn').innerHTML = evalBadge(returnT, data.returnTotal.target, reportIdx);
+
+  // "Bất thường chất lượng" summary cards — sum of all months with data (YTD), safe to redraw every refresh
+  const sumArr = arr => (arr||[]).reduce((a,b)=> a + (b||0), 0);
+  const khTong = sumArr(data.batThuong.khTotal), khTraLoi = sumArr(data.batThuong.khClosed);
+  const nbTong = sumArr(data.batThuong.nbTotal), nbTraLoi = sumArr(data.batThuong.nbClosed);
+  const khTyLe = khTong ? (khTraLoi/khTong*100) : null;
+  const nbTyLe = nbTong ? (nbTraLoi/nbTong*100) : null;
+  const batThuongKpis = [
+    {eyebrow:'KH · Tổng số vụ phát sinh', big:khTong, sub:'Lũy kế từ đầu năm', pill:null},
+    {eyebrow:'KH · Tổng số vụ đã trả lời', big:khTraLoi, sub:'Đã có đối sách (CLOSED)', pill:null},
+    {eyebrow:'KH · Tỷ lệ trả lời', big:fmtPct(khTyLe), sub:`${khTraLoi}/${khTong} vụ`, pill:null},
+    {eyebrow:'Nội bộ · Tổng số vụ phát sinh', big:nbTong, sub:'Lũy kế từ đầu năm', pill:null},
+    {eyebrow:'Nội bộ · Tổng số vụ đã trả lời', big:nbTraLoi, sub:'Đã có đối sách (CLOSED)', pill:null},
+    {eyebrow:'Nội bộ · Tỷ lệ trả lời', big:fmtPct(nbTyLe), sub:`${nbTraLoi}/${nbTong} vụ`, pill:null},
+  ];
+  document.getElementById('batThuongKpiRow').innerHTML = batThuongKpis.map(k=>`
+    <div class="kpi">
+      <div class="eyebrow">${k.eyebrow}</div>
+      <div class="big">${k.big} ${k.pill?`<span class="pill ${k.pill}">${k.pill==='good'?'Đạt':'Thấp'}</span>`:''}</div>
+      <div class="sub">${k.sub}</div>
+    </div>`).join('');
   document.getElementById('badgeVolume').innerHTML = evalBadge(internalT, data.internalTotal.target, reportIdx);
   document.getElementById('badgePoints').innerHTML = evalPointsBadge(data.bonusPoints[reportIdx], reportIdx);
 
@@ -1081,19 +1101,6 @@ function renderDashboard(data){
     chartsByKey.ng_lan1.data.datasets[3].data = data.ngLan1.Son;
     chartsByKey.ng_lan1.update();
   }
-
-  // Process table — plain <td> text, safe to redraw every refresh
-  const table = document.getElementById('processTable');
-  let thead = '<thead><tr><th>Công đoạn</th><th>Mục tiêu</th>' + monthsFull.map(m=>`<th>${m}</th>`).join('') + '</tr></thead>';
-  let tbody = '<tbody>' + procNames.map(n=>{
-    const d = data.processes[n]; const rs = seriesRate(d);
-    return `<tr><td>${procLabel(n)}</td><td class="target-col">${fmtPct(d.target)}</td>` +
-      rs.map(r=>{
-        if(r==null) return `<td class="cell-blank">–</td>`;
-        return `<td class="${r<=d.target?'cell-ok':'cell-no'}">${fmtPct(r)}</td>`;
-      }).join('') + `</tr>`;
-  }).join('') + '</tbody>';
-  table.innerHTML = thead + tbody;
 
   // Comments — value-only update (respects focus + just-saved grace period), never touches DOM structure
   wireAllCommentBoxes(document.getElementById('overview'), data.comments);
