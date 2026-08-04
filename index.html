@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<title>TOYOTAKI | Dashboard Tổng Quan</title>
+<title>TOYOTAKI | Trang Chủ Nội Bộ</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@400;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
@@ -23,13 +23,19 @@
   header.top .sub{font-size:13px;color:#c9c2b6;}
   .tk-mark{height:40px;width:auto;max-width:140px;object-fit:contain;}
 
-  .wrap{max-width:1000px;margin:0 auto;padding:70px 28px 60px;}
-  .wrap > .lead{text-align:center;margin-bottom:48px;}
+  .wrap{max-width:1180px;margin:0 auto;padding:56px 28px 60px;}
+  .wrap > .lead{text-align:center;margin-bottom:44px;}
   .wrap > .lead h2{font-size:22px;margin:0 0 8px;font-weight:600;}
   .wrap > .lead p{font-size:14px;color:var(--tk-muted);margin:0;}
 
-  .card-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
-  @media (max-width:640px){.card-grid{grid-template-columns:1fr;}}
+  .group{margin-bottom:40px;}
+  .group-title{display:flex;align-items:baseline;gap:12px;margin-bottom:18px;border-bottom:1px solid var(--tk-line);padding-bottom:10px;}
+  .group-title h2{font-size:17px;margin:0;font-weight:600;}
+  .group-title .count{margin-left:auto;font-size:12px;color:var(--tk-muted);}
+
+  .card-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;}
+  @media (max-width:900px){.card-grid{grid-template-columns:1fr 1fr;}}
+  @media (max-width:600px){.card-grid{grid-template-columns:1fr;}}
 
   .dash-card{
     display:block;background:var(--tk-card);border:1px solid var(--tk-line);border-radius:12px;
@@ -46,6 +52,7 @@
   }
   .dash-card .enter .arrow{transition:transform .15s ease;}
   .dash-card:hover .enter .arrow{transform:translateX(4px);}
+  .dash-card .ext{position:absolute;top:16px;right:16px;font-size:10px;font-weight:600;color:var(--tk-muted);background:var(--tk-cream-2);padding:3px 8px;border-radius:100px;letter-spacing:.03em;}
 
   footer{text-align:center;font-size:12px;color:var(--tk-muted);padding:30px 0;}
 </style>
@@ -55,9 +62,9 @@
 <header class="top">
   <div class="inner">
     <div>
-      <div class="eyebrow">Quản Lý Sản Xuất · QLSX</div>
-      <h1>Dashboard Tổng Quan</h1>
-      <div class="sub">TOYOTAKI — Năm 2026</div>
+      <div class="eyebrow">TOYOTAKI · Nội bộ</div>
+      <h1>Trang Chủ</h1>
+      <div class="sub">Năm 2026 — chọn chức năng bạn cần dùng</div>
     </div>
     <img class="tk-mark" src="https://lh3.googleusercontent.com/d/1Da5A4JNUXZsUWeJwc1WW9lhI47_xz9LR" alt="TOYOTAKI">
   </div>
@@ -65,28 +72,68 @@
 
 <div class="wrap">
   <div class="lead">
-    <h2>Chọn dashboard bạn muốn xem</h2>
-    <p>Số liệu được đồng bộ trực tiếp từ Google Sheet.</p>
+    <h2>Chọn chức năng bạn muốn sử dụng</h2>
+    <p>Bấm vào một mục bên dưới để chuyển đến đúng công cụ/dashboard.</p>
   </div>
 
-  <div class="card-grid">
-    <a class="dash-card" href="sanluong.html">
-      <div class="no">01 · Sản lượng</div>
-      <h3>Dashboard Sản Lượng &amp; Giao Hàng</h3>
-      <p>Tỷ lệ giao hàng đúng hạn, hoàn thành KHSX, capacity máy, forecast sản lượng.</p>
-      <span class="enter">Xem dashboard <span class="arrow">→</span></span>
-    </a>
+  <div class="group">
+    <div class="group-title"><h2>Dashboard &amp; Báo cáo</h2><span class="count">3 mục</span></div>
+    <div class="card-grid">
+      <a class="dash-card" href="sanluong.html">
+        <div class="no">Sản lượng</div>
+        <h3>Dashboard Sản Lượng &amp; Giao Hàng</h3>
+        <p>Tỷ lệ giao hàng đúng hạn, hoàn thành KHSX, capacity máy, forecast sản lượng.</p>
+        <span class="enter">Xem dashboard <span class="arrow">→</span></span>
+      </a>
 
-    <a class="dash-card" href="chatluong.html">
-      <div class="no">02 · Chất lượng</div>
-      <h3>Dashboard KPI Chất Lượng</h3>
-      <p>Tổng quan, theo công đoạn, theo khách hàng, bất thường chất lượng, tỷ lệ NG lần 1.</p>
-      <span class="enter">Xem dashboard <span class="arrow">→</span></span>
-    </a>
+      <a class="dash-card" href="chatluong.html">
+        <div class="no">Chất lượng</div>
+        <h3>Dashboard KPI Chất Lượng</h3>
+        <p>Tổng quan, theo công đoạn, theo khách hàng, bất thường chất lượng, tỷ lệ NG lần 1.</p>
+        <span class="enter">Xem dashboard <span class="arrow">→</span></span>
+      </a>
+
+      <a class="dash-card" href="https://script.google.com/macros/s/AKfycbzKzDDQecxfK5Z-3IzzQ9UPC0Oe0gHntbP0vlzjr-mAJrGVSAqT2iPptxHsihboUASVfw/exec" target="_blank" rel="noopener">
+        <span class="ext">Apps Script</span>
+        <div class="no">Đúc</div>
+        <h3>Dashboard Đúc</h3>
+        <p>Số liệu sản xuất và theo dõi công đoạn Đúc.</p>
+        <span class="enter">Xem dashboard <span class="arrow">→</span></span>
+      </a>
+    </div>
+  </div>
+
+  <div class="group">
+    <div class="group-title"><h2>Công cụ hiện trường</h2><span class="count">3 mục</span></div>
+    <div class="card-grid">
+      <a class="dash-card" href="https://script.google.com/macros/s/AKfycbzxYpLyLi4o9pDC4FutQglo0zM7YBMyKGou9WrivmFs_V7eENBza1eiXudfRJuGW94F/exec" target="_blank" rel="noopener">
+        <span class="ext">Apps Script</span>
+        <div class="no">In tem</div>
+        <h3>In Tem Công Đoạn Đúc</h3>
+        <p>Tạo và in tem nhãn cho hàng hoá tại công đoạn Đúc.</p>
+        <span class="enter">Mở công cụ <span class="arrow">→</span></span>
+      </a>
+
+      <a class="dash-card" href="https://script.google.com/macros/s/AKfycby4beKfHRPIqCu51Vb9r7csh1Q-8rmRWp89eFhPfNfyCI_iIKawJoiJ_00J6G4kXBictg/exec" target="_blank" rel="noopener">
+        <span class="ext">Apps Script</span>
+        <div class="no">QR Code</div>
+        <h3>Đọc QR Chuyển Công Đoạn</h3>
+        <p>Quét QR để ghi nhận chuyển hàng giữa các công đoạn sản xuất.</p>
+        <span class="enter">Mở công cụ <span class="arrow">→</span></span>
+      </a>
+
+      <a class="dash-card" href="https://dangnaf-toyo.github.io/Ton-kho-NVL/" target="_blank" rel="noopener">
+        <span class="ext">Trang riêng</span>
+        <div class="no">Kho NVL</div>
+        <h3>Quản Lý Tồn Kho Nguyên Vật Liệu</h3>
+        <p>Theo dõi tồn kho, nhập/xuất nguyên vật liệu.</p>
+        <span class="enter">Mở công cụ <span class="arrow">→</span></span>
+      </a>
+    </div>
   </div>
 </div>
 
-<footer>TOYOTAKI · Quản Lý Sản Xuất</footer>
+<footer>TOYOTAKI · Trang chủ nội bộ — cập nhật thêm chức năng khi có công cụ mới</footer>
 
 </body>
 </html>
