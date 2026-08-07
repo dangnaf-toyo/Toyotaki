@@ -758,6 +758,7 @@ function upgradeCommentTextareaToRich(ta){
   if (ta.id) ed.id = ta.id;
   if (ta.getAttribute('style')) ed.setAttribute('style', ta.getAttribute('style'));
   ed.contentEditable = 'true';
+  ed.spellcheck = false;
   ed.setAttribute('data-placeholder', ta.placeholder || '');
   if (ta.value) ed.innerHTML = ta.value.replace(/\n/g, '<br>');
   const toolbar = buildCommentToolbar(ed);
