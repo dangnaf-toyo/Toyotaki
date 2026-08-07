@@ -333,7 +333,7 @@
       </div>
 
       <div class="placeholder-note" id="forecastNote">
-        📌 T1–T6 lấy số liệu thực tế đã sản xuất (màu đậm), T7–T12 lấy số dự báo/forecast (màu nhạt hơn) — dữ liệu đồng bộ từ tab <code>Forecast</code> trong Google Sheet.
+        📌 Mặc định T1–T6 hiển thị màu đậm (thực tế), T7–T12 màu nhạt (dự báo). Muốn ghi đè cho từng tháng, thêm cột <code>Loai</code> vào tab <code>Forecast</code> trong Google Sheet, điền <code>ThucTe</code> hoặc <code>Forecast</code> cho tháng đó — dữ liệu đồng bộ từ tab <code>Forecast</code>.
       </div>
 
       <div class="card">
@@ -486,6 +486,12 @@ const pctFmt = v => (v*100).toFixed(0)+'%';
 // Tolerant match so "Forecast", "forecast ", "FORECAST" all count — avoids silent breakage
 // from small typos/casing differences when someone types this into the Sheet by hand.
 function isForecast(v){ return String(v||'').trim().toLowerCase() === 'forecast'; }
+// If the sheet has an explicit Loai value for that month, honor it; otherwise fall back
+// to the calendar default (index 0-based: T1–T6 actual, T7–T12 forecast).
+function isForecastMonth(loaiVal, i){
+  const v = String(loaiVal||'').trim();
+  return v ? isForecast(v) : i >= 6;
+}
 
 const chartsByTab = {tab1:[], tab2:[], tab3:[], tab4:[]};
 
@@ -507,8 +513,8 @@ const DEMO_DATA = {
     loai:['ThucTe','ThucTe','ThucTe','ThucTe','ThucTe','ThucTe','Forecast','Forecast','Forecast','','','']
   },
   forecast:{
-    actual:   {FCC:[null,null,null,null,null,null], Exedy:[null,null,null,null,null,null], Astemo:[null,null,null,null,null,null], TTI:[null,null,null,null,null,null], Khac:[null,null,null,null,null,null]},
-    forecast: {FCC:[null,null,null,null,null,null], Exedy:[null,null,null,null,null,null], Astemo:[null,null,null,null,null,null], TTI:[null,null,null,null,null,null], Khac:[null,null,null,null,null,null]}
+    values: {FCC:new Array(12).fill(null), Exedy:new Array(12).fill(null), Astemo:new Array(12).fill(null), TTI:new Array(12).fill(null), Khac:new Array(12).fill(null)},
+    loai: ['ThucTe','ThucTe','ThucTe','ThucTe','ThucTe','ThucTe','Forecast','Forecast','Forecast','Forecast','Forecast','Forecast']
   },
   comments:{
     giaohang:'Tháng 6 tỉ lệ giao hàng đạt 98.8% (giảm nhẹ so với 5 tháng đầu năm đạt 100%), do hàng NG trả về tăng lên 9,733 Pcs. Cần bộ phận QC và Đúc phối hợp giảm tỉ lệ hàng lỗi trả về trong tháng 7.',
@@ -614,16 +620,13 @@ function buildDataModel(raw){
   };
 
   const custKeys = ['FCC','Exedy','Astemo','TTI','Khac'];
-  const actual = {}, forecastObj = {};
-  custKeys.forEach(k=>{ actual[k]=new Array(6).fill(null); forecastObj[k]=new Array(6).fill(null); });
+  const forecastVals = {};
+  custKeys.forEach(k=>{ forecastVals[k]=new Array(12).fill(null); });
   (raw.forecast||[]).forEach(row=>{
     const m = parseInt(row['Thang'],10);
-    custKeys.forEach(k=>{
-      const val = toNum(row[k]);
-      if (m>=1 && m<=6) actual[k][m-1]=val;
-      else if (m>=7 && m<=12) forecastObj[k][m-7]=val;
-    });
+    if (m>=1 && m<=12) custKeys.forEach(k=>{ forecastVals[k][m-1] = toNum(row[k]); });
   });
+  const forecastLoai = toMonthArrayRaw(raw.forecast, 'Loai');
 
   const cmt = {};
   (raw.comments||[]).forEach(r=>{ cmt[r['Key']] = r['NoiDung']; });
@@ -639,7 +642,7 @@ function buildDataModel(raw){
     giaoHang:{rates:ghRates, thucTe:ghTT},
     khsx:{ duc:mkRate('Duc_KH','Duc_TT'), bavia:mkRate('Bavia_KH','Bavia_TT'), giacong:mkRate('GiaCong_KH','GiaCong_TT'), son:mkRate('Son_KH','Son_TT') },
     capacity:{ c350:toMonthArray(raw.capacity,'Capa350'), c850:toMonthArray(raw.capacity,'Capa850'), gc:toMonthArray(raw.capacity,'CapaGC'), loai:toMonthArrayRaw(raw.capacity,'Loai') },
-    forecast:{actual, forecast:forecastObj},
+    forecast:{values:forecastVals, loai:forecastLoai},
     comments: cmt
   };
 }
@@ -662,14 +665,15 @@ function hexToRgba(hex, alpha){
 function buildForecastChart(data){
   const ctx = document.getElementById('chartForecast');
   if (chartsByTab.tab4[0]) chartsByTab.tab4[0].destroy();
+  const loai = data.loai || [];
   const chart = new Chart(ctx, {
     type:'bar',
     data:{
       labels:months12,
       datasets:Object.keys(forecastColorsHex).map(k=>{
-        const combined = [...data.actual[k], ...data.forecast[k]];
-        const colors = combined.map((_,i)=> hexToRgba(forecastColorsHex[k], i<6 ? 1 : 0.4));
-        return {label:k, data:combined, backgroundColor:colors, stack:'fcst'};
+        const vals = data.values[k];
+        const colors = vals.map((_,i)=> hexToRgba(forecastColorsHex[k], isForecastMonth(loai[i], i) ? 0.4 : 1));
+        return {label:k, data:vals, backgroundColor:colors, stack:'fcst'};
       })
     },
     options:{
