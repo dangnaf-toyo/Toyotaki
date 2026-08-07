@@ -98,7 +98,7 @@
     display:block;width:100%;box-sizing:border-box;
     border:1px solid var(--tk-line);border-radius:8px;padding:8px 10px;font-size:12px;line-height:1.55;
     min-height:50px;background:#FFFCF7;outline:none;color:var(--tk-black);
-    font-family:'IBM Plex Sans',sans-serif;
+    font-family:'IBM Plex Sans',sans-serif;resize:vertical;overflow:hidden;
   }
   .comment-edit:focus{outline:2px solid var(--tk-orange);outline-offset:1px;}
   .comment-edit:empty:before{content:attr(data-placeholder);color:var(--tk-muted);font-style:italic;}
@@ -700,6 +700,11 @@ function escapeForSheet(s){ return String(s||'').replace(/\r\n|\r|\n/g, '\\n'); 
 function unescapeForSheet(s){ return String(s||'').replace(/\\n/g, '\n'); }
 
 /* ---------- Rich-text formatting toolbar (bold/italic/underline, font size, color) ---------- */
+// Grows the box to fit its content (never shrinks below a height the user dragged
+// manually via the native resize handle — only grows on new content).
+function autoGrowEditable(ed){
+  if (ed.scrollHeight > ed.clientHeight) ed.style.height = ed.scrollHeight + 'px';
+}
 function saveEditableSelection(ed){
   const sel = window.getSelection();
   if (sel.rangeCount && ed.contains(sel.anchorNode)) ed._savedRange = sel.getRangeAt(0).cloneRange();
@@ -742,6 +747,7 @@ function buildCommentToolbar(ed){
     saveEditableSelection(ed);
   });
   ['mouseup','keyup','focus'].forEach(evt => ed.addEventListener(evt, ()=>saveEditableSelection(ed)));
+  ed.addEventListener('input', () => autoGrowEditable(ed));
   return bar;
 }
 // Converts a plain <textarea class="comment-edit" id="cmt-..."> into a contenteditable
@@ -757,6 +763,7 @@ function upgradeCommentTextareaToRich(ta){
   const toolbar = buildCommentToolbar(ed);
   ta.parentNode.insertBefore(toolbar, ta);
   ta.parentNode.replaceChild(ed, ta);
+  autoGrowEditable(ed);
   return ed;
 }
 function setComment(id, text){
@@ -766,6 +773,7 @@ function setComment(id, text){
   const key = id.replace(/^cmt-/, '');
   if (savedRecently[key] && (Date.now() - savedRecently[key] < SAVED_GRACE_MS)) return;
   if (text) el.innerHTML = unescapeForSheet(text).replace(/\n/g, '<br>');
+  autoGrowEditable(el);
 }
 
 function renderAll(data){
@@ -965,7 +973,11 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
     const tabId = btn.dataset.tab;
     const tabEl = document.getElementById(tabId);
     tabEl.classList.add('active');
-    requestAnimationFrame(() => { (chartsByTab[tabId] || []).forEach(c => c.resize()); });
+    requestAnimationFrame(() => {
+      (chartsByTab[tabId] || []).forEach(c => c.resize());
+      // hidden tabs report height 0, so re-measure comment boxes once visible
+      tabEl.querySelectorAll('.comment-edit').forEach(autoGrowEditable);
+    });
   });
 });
 
