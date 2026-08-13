@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>TOYOTAKI | Chuyển công đoạn (bản thử nghiệm Supabase)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@400;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --tk-black:#211a15; --tk-cream:#F7F1E7; --tk-cream-2:#EFE5D3;
+    --tk-orange:#C87941; --tk-orange-deep:#A25A2A; --tk-line:#DCCFB6;
+    --tk-good:#4C7A5E; --tk-bad:#AC4231; --tk-muted:#8A7C68; --tk-card:#FFFDF9;
+    --tk-good-bg:#E4EEE7; --tk-bad-bg:#F5E2DD; --tk-navy:#33465C;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--tk-cream);font-family:'IBM Plex Sans',sans-serif;color:var(--tk-black);-webkit-font-smoothing:antialiased;}
+  h1,h2,h3{font-family:'Zilla Slab',serif;}
+  .wrap{max-width:1240px;margin:0 auto;padding:0 28px 60px;}
+
+  header.top{background:var(--tk-black);color:var(--tk-cream);padding:22px 0;border-bottom:5px solid var(--tk-orange);}
+  header.top .inner{max-width:1240px;margin:0 auto;padding:0 28px;display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:16px;}
+  .title-block .eyebrow{text-transform:uppercase;letter-spacing:.14em;font-size:11.5px;color:var(--tk-orange);font-weight:600;margin-bottom:8px;}
+  .title-block h1{font-size:23px;margin:0 0 6px;font-weight:600;color:#fff;letter-spacing:.01em;}
+  .title-block .sub{font-size:13px;color:#c9c2b6;}
+  .meta{text-align:right;font-size:12.5px;color:#c9c2b6;line-height:1.6;}
+  .btn-row{display:flex;gap:8px;margin-top:8px;justify-content:flex-end;}
+  .refresh-btn{background:transparent;border:1.5px solid var(--tk-orange);color:var(--tk-orange);padding:7px 14px;border-radius:100px;font-size:12px;font-weight:600;cursor:pointer;font-family:'IBM Plex Sans',sans-serif;}
+  .refresh-btn:hover{opacity:.85;}
+  .refresh-btn:disabled{opacity:.5;cursor:wait;}
+
+  .sync-banner{max-width:1240px;margin:0 auto;padding:9px 28px;font-size:12.5px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--tk-line);}
+  .sync-banner .dot{width:8px;height:8px;border-radius:50%;flex:none;}
+  .sync-banner.demo{background:#FBF3E8;color:#8A6A3D;} .sync-banner.demo .dot{background:#C89341;}
+  .sync-banner.live{background:var(--tk-good-bg);color:var(--tk-good);} .sync-banner.live .dot{background:var(--tk-good);}
+  .sync-banner.loading{background:#EEF1F4;color:var(--tk-navy);} .sync-banner.loading .dot{background:var(--tk-navy);animation:pulse 1s infinite;}
+  .sync-banner.error{background:var(--tk-bad-bg);color:var(--tk-bad);} .sync-banner.error .dot{background:var(--tk-bad);}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
+
+  .tabnav{position:sticky;top:0;z-index:20;background:var(--tk-cream);border-bottom:1px solid var(--tk-line);padding:14px 0;}
+  .tabnav .inner{max-width:1240px;margin:0 auto;padding:0 28px;display:flex;gap:6px;overflow-x:auto;flex-wrap:wrap;}
+  .tab-btn{background:transparent;border:1.5px solid var(--tk-black);border-radius:100px;padding:10px 18px;font-family:'IBM Plex Sans',sans-serif;font-weight:600;font-size:13.5px;color:var(--tk-black);cursor:pointer;white-space:nowrap;transition:.15s;}
+  .tab-btn.active{background:var(--tk-black);color:var(--tk-cream);border-color:var(--tk-black);}
+  .tab-btn:not(.active):hover{background:var(--tk-cream-2);}
+  .tab-content{display:none;} .tab-content.active{display:block;}
+
+  section{margin-top:30px;}
+  .section-head{display:flex;align-items:baseline;gap:12px;margin-bottom:16px;border-bottom:1px solid var(--tk-line);padding-bottom:10px;}
+  .section-head h2{font-size:18px;margin:0;font-weight:600;}
+  .section-head .note{margin-left:auto;font-size:12px;color:var(--tk-muted);}
+
+  .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:6px;}
+  .kpi-card{background:var(--tk-card);border:1px solid var(--tk-line);border-radius:12px;padding:16px 18px;}
+  .kpi-label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--tk-muted);font-weight:600;}
+  .kpi-value{font-family:'Zilla Slab',serif;font-size:29px;font-weight:700;margin:6px 0 2px;}
+
+  .card{background:var(--tk-card);border:1px solid var(--tk-line);border-radius:12px;padding:18px 20px;margin-top:18px;}
+  .card h3{font-family:'Zilla Slab',serif;font-size:16.5px;margin:0 0 10px;font-weight:600;}
+  .search-box{width:100%;max-width:320px;padding:7px 10px;border:1px solid var(--tk-line);border-radius:8px;font-size:12.5px;margin-bottom:12px;font-family:'IBM Plex Sans',sans-serif;}
+
+  table.kpi-table{width:100%;border-collapse:collapse;font-size:11.5px;}
+  table.kpi-table th,table.kpi-table td{padding:7px 6px;text-align:left;border-bottom:1px solid var(--tk-line);white-space:nowrap;}
+  table.kpi-table thead th{color:var(--tk-muted);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.02em;border-bottom:2px solid var(--tk-black);position:sticky;top:0;background:var(--tk-card);}
+  table.kpi-table tbody tr:hover{background:var(--tk-cream-2);}
+  .table-scroll{overflow-x:auto;max-height:560px;overflow-y:auto;}
+  .pill{display:inline-block;padding:2px 8px;border-radius:100px;font-size:11px;font-weight:600;}
+  .pill.good{background:var(--tk-good-bg);color:var(--tk-good);}
+  .pill.bad{background:var(--tk-bad-bg);color:var(--tk-bad);}
+  .pill.warn{background:#FBF3E8;color:#8A6A3D;}
+
+  details.setup-guide{margin-top:30px;border:1px solid var(--tk-line);border-radius:12px;background:var(--tk-card);padding:4px 0;}
+  details.setup-guide summary{cursor:pointer;padding:14px 18px;font-weight:600;font-size:13.5px;list-style:none;}
+  details.setup-guide summary::-webkit-details-marker{display:none;}
+  details.setup-guide summary:before{content:"⚙️ ";}
+  details.setup-guide .guide-body{padding:0 22px 20px;font-size:13px;line-height:1.7;color:#4a4438;}
+  details.setup-guide code{background:#F1EAE0;padding:1px 6px;border-radius:4px;font-size:12px;}
+  details.setup-guide ol{padding-left:20px;}
+
+  footer{margin-top:50px;padding-top:20px;border-top:1px solid var(--tk-line);font-size:11.5px;color:var(--tk-muted);display:flex;justify-content:space-between;}
+  @media (max-width:900px){ .kpi-grid{grid-template-columns:repeat(2,1fr);} }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="inner">
+    <div class="title-block">
+      <div class="eyebrow">Quản Lý Sản Xuất · QLSX</div>
+      <h1>Đọc QR Chuyển Công Đoạn <span style="font-size:14px;font-weight:600;color:#C87941;border:1px solid #C87941;border-radius:6px;padding:2px 8px;vertical-align:middle;">BẢN THỬ NGHIỆM — Supabase, chỉ đọc</span></h1>
+      <div class="sub">Đối chiếu song song với bản Google Sheet gốc — trang này KHÔNG ghi dữ liệu (vẫn ghi qua Apps Script như cũ)</div>
+    </div>
+    <div class="meta">
+      Đơn vị báo cáo: <b>QLSX</b><br>
+      <div class="btn-row">
+        <button class="refresh-btn" id="btnRefresh" onclick="loadData()">🔄 Làm mới</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="sync-banner demo" id="syncBanner">
+  <span class="dot"></span>
+  <span id="syncText">Đang khởi tạo…</span>
+</div>
+
+<nav class="tabnav">
+  <div class="inner">
+    <button class="tab-btn active" data-tab="tab1">Vị trí hiện tại</button>
+    <button class="tab-btn" data-tab="tab2">Nhật ký chuyển công đoạn</button>
+  </div>
+</nav>
+
+<div class="wrap">
+
+  <div class="tab-content active" id="tab1">
+    <section>
+      <div class="section-head"><h2>Vị trí hiện tại theo Tag No</h2><span class="note">VIEW cd_v_vi_tri_hien_tai — thay hẳn sheet ViTriHienTai cũ, không cần upsert thủ công</span></div>
+      <div class="kpi-grid">
+        <div class="kpi-card"><div class="kpi-label">Tổng số Tag No đang theo dõi</div><div class="kpi-value" id="kpiTongTag">—</div></div>
+        <div class="kpi-card"><div class="kpi-label">Lượt chuyển hôm nay</div><div class="kpi-value" id="kpiLuotHomNay">—</div></div>
+        <div class="kpi-card"><div class="kpi-label">SL thực chuyển hôm nay</div><div class="kpi-value" id="kpiSlHomNay">—</div></div>
+        <div class="kpi-card"><div class="kpi-label">Chênh lệch (hao hụt) hôm nay</div><div class="kpi-value" id="kpiHaoHutHomNay">—</div></div>
+      </div>
+      <div class="card">
+        <input class="search-box" placeholder="Tìm theo Tag No..." oninput="filterTable('tblViTri', this.value)">
+        <div class="table-scroll"><table class="kpi-table" id="tblViTri">
+          <thead><tr><th>Tag No</th><th>Công đoạn hiện tại</th><th>Thời gian chuyển gần nhất</th></tr></thead>
+          <tbody></tbody>
+        </table></div>
+      </div>
+    </section>
+  </div>
+
+  <div class="tab-content" id="tab2">
+    <section>
+      <div class="section-head"><h2>Nhật ký chuyển công đoạn</h2><span class="note">cd_chuyen_cong_doan_log — 300 lượt gần nhất, mới nhất trước</span></div>
+      <div class="card">
+        <input class="search-box" placeholder="Tìm theo Tag No / Mã SP..." oninput="filterTable('tblLog', this.value)">
+        <div class="table-scroll"><table class="kpi-table" id="tblLog">
+          <thead><tr><th>Thời gian</th><th>Tag No</th><th>Mã SP</th><th>Tên SP</th><th>SL tem</th><th>SL thực chuyển</th><th>Chênh lệch</th><th>Công đoạn giao</th><th>Công đoạn nhận</th><th>Người nhận</th><th>Xác nhận</th></tr></thead>
+          <tbody></tbody>
+        </table></div>
+      </div>
+    </section>
+  </div>
+
+  <details class="setup-guide">
+    <summary>Hướng dẫn kết nối</summary>
+    <div class="guide-body">
+      <p><b>SUPABASE_URL</b> / <b>SUPABASE_ANON_KEY</b> đã điền sẵn ở đầu thẻ <code>&lt;script&gt;</code> (cùng project với các trang pilot khác).</p>
+      <ol>
+        <li>Chạy <code>supabase/schema_chuyencongdoan.sql</code> trong Supabase SQL Editor (nếu chưa chạy) — file này tạo cả bảng <code>cd_chuyen_cong_doan_log</code> và VIEW <code>cd_v_vi_tri_hien_tai</code>.</li>
+        <li>Chạy <code>supabase/import-chuyencongdoan.mjs</code> để nạp dữ liệu (đọc CSV publish-to-web như hiện tại).</li>
+        <li>Bấm "🔄 Làm mới" ở góc phải để tải lại.</li>
+      </ol>
+    </div>
+  </details>
+
+  <footer>
+    <span>TOYOTAKI · Chuyển công đoạn (Supabase pilot)</span>
+    <span id="footerTime"></span>
+  </footer>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://fgghikpzcxjqzahfiiil.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_WWugFHNNGGQPWZRsMxGyVA_YpsL4v3v';
+
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(btn.dataset.tab).classList.add('active');
+  });
+});
+
+function isConfigured(){
+  return SUPABASE_URL && !SUPABASE_URL.startsWith('PASTE_') && SUPABASE_ANON_KEY && !SUPABASE_ANON_KEY.startsWith('PASTE_');
+}
+async function fetchSupabaseTable(table, query){
+  const url = `${SUPABASE_URL}/rest/v1/${table}?${query || 'select=*'}`;
+  const res = await fetch(url, { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` } });
+  if (!res.ok) throw new Error('HTTP ' + res.status + ' fetching ' + table);
+  return res.json();
+}
+function setBanner(state, text){
+  document.getElementById('syncBanner').className = 'sync-banner ' + state;
+  document.getElementById('syncText').textContent = text;
+}
+function nowStr(){
+  const d = new Date();
+  return d.toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'}) + ' ' + d.toLocaleDateString('vi-VN');
+}
+function esc(v){ return v===null||v===undefined ? '' : String(v).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+function fmtNum(v){ return v===null||v===undefined ? '' : Number(v).toLocaleString('vi-VN'); }
+function fmtDateTime(v){ if(!v) return ''; try { return new Date(v).toLocaleString('vi-VN',{hour:'2-digit',minute:'2-digit',day:'2-digit',month:'2-digit'}); } catch { return v; } }
+function todayISO(){ return new Date().toISOString().slice(0,10); }
+
+function fillTable(tableId, rows, rowFn){
+  document.querySelector(`#${tableId} tbody`).innerHTML = rows.map(rowFn).join('') || '<tr><td colspan="12" style="color:var(--tk-muted);">Không có dữ liệu</td></tr>';
+}
+function filterTable(tableId, term){
+  const t = term.trim().toLowerCase();
+  document.querySelectorAll(`#${tableId} tbody tr`).forEach(tr=>{
+    tr.style.display = !t || tr.textContent.toLowerCase().includes(t) ? '' : 'none';
+  });
+}
+
+async function loadData(){
+  const btn = document.getElementById('btnRefresh');
+  btn.disabled = true;
+  if (!isConfigured()){
+    setBanner('demo', '🔌 Chưa cấu hình SUPABASE_URL/SUPABASE_ANON_KEY.');
+    btn.disabled = false;
+    return;
+  }
+  setBanner('loading', '🔄 Đang tải dữ liệu từ Supabase…');
+  try {
+    const [viTri, log] = await Promise.all([
+      fetchSupabaseTable('cd_v_vi_tri_hien_tai', 'select=*&order=thoi_gian_chuyen.desc&limit=200'),
+      fetchSupabaseTable('cd_chuyen_cong_doan_log', 'select=*&order=thoi_gian_chuyen.desc&limit=300'),
+    ]);
+
+    document.getElementById('kpiTongTag').textContent = fmtNum(viTri.length);
+    fillTable('tblViTri', viTri, r => `<tr>
+      <td>${esc(r.tag_no)}</td><td><span class="pill good">${esc(r.vi_tri_hien_tai)}</span></td><td>${fmtDateTime(r.thoi_gian_chuyen)}</td></tr>`);
+
+    const today = todayISO();
+    const logHomNay = log.filter(r => (r.thoi_gian_chuyen || '').slice(0,10) === today);
+    document.getElementById('kpiLuotHomNay').textContent = fmtNum(logHomNay.length);
+    document.getElementById('kpiSlHomNay').textContent = fmtNum(logHomNay.reduce((a,r)=>a+(Number(r.sl_thuc_chuyen)||0),0));
+    document.getElementById('kpiHaoHutHomNay').textContent = fmtNum(logHomNay.reduce((a,r)=>a+(Number(r.chenh_lech)||0),0));
+
+    fillTable('tblLog', log, r => `<tr>
+      <td>${fmtDateTime(r.thoi_gian_chuyen)}</td><td>${esc(r.tag_no)}</td><td>${esc(r.ma_sp)}</td><td>${esc(r.ten_sp)}</td>
+      <td>${fmtNum(r.sl_tren_tem)}</td><td>${fmtNum(r.sl_thuc_chuyen)}</td>
+      <td>${Number(r.chenh_lech) ? `<span class="pill warn">${fmtNum(r.chenh_lech)}</span>` : fmtNum(r.chenh_lech)}</td>
+      <td>${esc(r.cong_doan_giao)}</td><td>${esc(r.cong_doan_nhan)}</td><td>${esc(r.nguoi_nhan)}</td>
+      <td>${r.trang_thai_xac_nhan && r.trang_thai_xac_nhan.includes('Đã') ? `<span class="pill good">Đã xác nhận</span>` : `<span class="pill warn">${esc(r.trang_thai_xac_nhan)||'Chờ'}</span>`}</td></tr>`);
+
+    setBanner('live', `🟢 Dữ liệu trực tuyến (Supabase) — cập nhật lúc ${nowStr()}`);
+  } catch(err){
+    console.error('Lỗi tải dữ liệu Supabase:', err);
+    setBanner('error', `⚠️ Không tải được dữ liệu (${err.message}). Kiểm tra đã chạy schema_chuyencongdoan.sql + import-chuyencongdoan.mjs chưa, và RLS "public read" đã bật chưa.`);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+document.getElementById('footerTime').textContent = 'Trang tải lúc ' + nowStr();
+loadData();
+setInterval(loadData, 5 * 60 * 1000);
+</script>
+</body>
+</html>

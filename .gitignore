@@ -1,0 +1,6 @@
+# Service account keys / credentials — không bao giờ commit
+*.json.key
+service-account*.json
+*-migrate-*.json
+.env
+.env.*

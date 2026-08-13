@@ -186,7 +186,7 @@ Mục tiêu: thay vì dùng link mặc định `dangnaf-toyo.github.io/Toyotaki`
 | Diecast | `1mxsjmez6UXvG5O7WjklZ8_l_RmUa2EEczis12On7_4s` | Log sản lượng thực tế theo phút (đọc để tính TT_ca/TT_tuần, poll 60s). **Cũng chính là file chứa sheet `DUC` của hệ thống In tem (mục 9.2)** |
 | DB | `1OFuCuaZtprKlgmuNc9Fag_S0ZWBT-S2Hz4Y7R0NQ0D4` | 9 sheet nghiệp vụ, chi tiết bên dưới |
 
-**9 sheet trong file DB → đề xuất bảng Postgres tương ứng:**
+**11 sheet trong file DB → đề xuất bảng Postgres tương ứng** (đã cập nhật 2026-08-12, đọc lại toàn bộ `Config.js` — phát hiện thêm 2 sheet chưa từng ghi trong bản kế hoạch trước: `Shot_May` và `SP_Khong_Phu_Hop`):
 
 | Sheet hiện tại | Số cột | Vai trò | Bảng Postgres đề xuất |
 |---|---|---|---|
@@ -197,6 +197,8 @@ Mục tiêu: thay vì dùng link mặc định `dangnaf-toyo.github.io/Toyotaki`
 | `TangCa_Log` | 12 | Audit log các lần tăng ca máy đơn lẻ | `duc_tangca_log` |
 | `Van_De_Khuon` | 18 | Vấn đề khuôn nhẹ theo dõi xuyên nhiều ca đến khi đóng | `duc_van_de_khuon` |
 | `Lich_Su_SanXuat` | 11 | 1 dòng/(ngày,ca,máy,SP) lưu lại sau kết ca — nguồn cho báo cáo tuần/tháng | `duc_lich_su_san_xuat` |
+| `Shot_May` | 3 | 1 dòng/máy — carry số đọc shot counter cuối ca sang "shot đầu ca" của dòng kế tiếp | `duc_shot_may` |
+| `SP_Khong_Phu_Hop` | 48 | **Mới phát hiện 2026-08-12** — quy trình đầy đủ xử lý SP không phù hợp: cách ly → lọc → sửa/báo phế → duyệt phế → phân tích nguyên nhân & đối sách (Phát sinh/Lưu xuất × Tạm thời/Lâu dài). Có thể liên kết ngược tới `IPQC_Checkpoint` qua `id_checkpoint_goc`. | `duc_ncp` |
 | `Access_Control` | — | Phân quyền (hiện `SECURITY_ENABLED: false` — mọi user coi như Admin) | → thay bằng Supabase Auth + RLS, bỏ hẳn sheet này |
 | `Audit_Log` | — | Audit chung | → có thể thay bằng Postgres trigger tự ghi audit, không cần bảng riêng thủ công |
 
@@ -300,10 +302,16 @@ Hiện 3 hệ thống chia sẻ file KHSX Master nhưng **không** liên kết d
   - **Tồn kho NVL**: `supabase/schema_nvl.sql`, `supabase/import-nvl.mjs`, trang pilot `D:\Project\MES\Quản lý NVL\index-supabase.html` (repo GitHub riêng `Ton-kho-NVL`, đã có remote sẵn — chỉ cần push để có link công khai).
   - **Phát hiện quan trọng khi khảo sát NVL** (không phải giả định trong tài liệu, đã xác nhận qua dữ liệu thật): (1) đơn vị lưu trữ phức tạp hơn mô tả ban đầu — `Tồn Đầu Kỳ`/`Cài Đặt`/`Giao Dịch`/`Tồn Hiện Tại` đều đang lưu bằng **tấn**, riêng `Kế Hoạch` lưu bằng **kg**; (2) action `getTemList` của Web App hiện tại chỉ trả 100 tem gần nhất — không có cách lấy toàn bộ lịch sử tem qua API công khai; (3) **có 1 giao dịch NHẬP ngày 2026-07-13 với số lượng 1050 "tấn" cho mã `ADC12-DAK`** gần như chắc chắn là lỗi nhập liệu (tem đơn vị `pcs` bị ghi thẳng vào Giao Dịch mà không quy đổi) — đang làm sai lệch số tồn hiện tại hiển thị trên dashboard NVL **ngay cả ở bản Sheet đang chạy thật**, không liên quan gì đến việc migrate. Nên kiểm tra/sửa lại giao dịch này trong Sheet gốc sớm, độc lập với tiến độ migrate.
 
+- **2026-08-13** — Mở rộng migrate sang 2 module còn lại (Chuyển công đoạn, Đúc+IPQC+In tem), theo đúng yêu cầu "migrate toàn bộ dự án":
+  - **Chuyển công đoạn**: `supabase/schema_chuyencongdoan.sql` + `supabase/import-chuyencongdoan.mjs` đã có sẵn từ trước (đọc CSV publish-to-web như các module khác). Mới thêm trang pilot `chuyencongdoan-supabase.html` (tab "Vị trí hiện tại" đọc từ VIEW `cd_v_vi_tri_hien_tai`, tab "Nhật ký" đọc `cd_chuyen_cong_doan_log`).
+  - **Đúc + IPQC + In tem**: xác nhận `supabase/schema_duc.sql` (đã có sẵn, 16 bảng) khớp 100% với `Config.js` thật (đối chiếu lại toàn bộ COL_* — không phát hiện sai lệch). Module này **KHÔNG có publish-to-web/API JSON công khai** như các module khác — `doGet` của `WebApp.js` chỉ trả HTML có kiểm tra đăng nhập, dữ liệu đọc qua `google.script.run` nội bộ (không fetch được từ ngoài). Giải pháp chọn: đọc trực tiếp qua **Google Sheets API + service account** (không đụng code Apps Script đang chạy thật). Mới viết `supabase/import-duc.mjs` (tự ký JWT bằng `node:crypto`, không thêm dependency npm) và trang pilot `duc-supabase.html` (4 tab: Ca đang chạy, Sự cố, Báo cáo ca, Shot khuôn — 4/16 bảng lõi, các bảng còn lại như IPQC_Checkpoint/SP_Khong_Phu_Hop/Van_De_Khuon chưa có tab riêng, để bổ sung sau).
+  - Ghi chú: `SUPABASE_ANON_KEY` (public theo thiết kế, được bảo vệ bằng RLS) đã điền sẵn trong tất cả trang pilot, không còn placeholder `PASTE_...` — không cần điền tay khi mở trang.
+
 **Việc cần làm tiếp theo (thứ tự):**
-1. Chạy 3 file `supabase/schema_*.sql` (Sản lượng, Chất lượng, NVL) trong SQL Editor của Supabase.
-2. Set biến môi trường `SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY`, chạy 3 script `supabase/import-*.mjs` để nạp dữ liệu (thay cho import tay qua CSV).
-3. Điền `SUPABASE_URL`/`SUPABASE_ANON_KEY` vào 3 trang pilot (`sanluong-supabase.html`, `chatluong-supabase.html`, `index-supabase.html`), mở thử, đối chiếu số liệu với bản gốc.
-4. Push `sanluong-supabase.html`/`chatluong-supabase.html` lên repo `Toyotaki` và `index-supabase.html` lên repo `Ton-kho-NVL` để có link công khai chạy song song — **các trang gốc (`sanluong.html`, `chatluong.html`, `index.html`) giữ nguyên, không đổi**.
-5. Sau khi đối chiếu ổn định (khuyến nghị 1 tuần/module), mới cân nhắc đổi link chính thức trên `index.html` trang chủ trỏ sang bản Supabase, và tắt dần nguồn CSV/GAS cũ.
-6. Kiểm tra/sửa giao dịch lỗi 1050 "tấn" của `ADC12-DAK` trong Sheet NVL gốc (không phụ thuộc migrate).
+1. Chạy 5 file `supabase/schema_*.sql` (Sản lượng, Chất lượng, NVL, Chuyển công đoạn, Đúc) trong SQL Editor của Supabase.
+2. Set biến môi trường `SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY`, chạy 4 script `supabase/import-*.mjs` (sanluong/chatluong/nvl/chuyencongdoan) để nạp dữ liệu.
+3. Với riêng Đúc: tạo Google Cloud service account, bật Sheets API, share 3 file Sheet (KHSX Master/Diecast/DB) cho service account quyền Viewer, rồi chạy `supabase/import-duc.mjs` với thêm biến `GOOGLE_SERVICE_ACCOUNT_KEY_FILE` (hướng dẫn chi tiết ở đầu file script).
+4. Mở 5 trang pilot (`sanluong-supabase.html`, `chatluong-supabase.html`, `index-supabase.html`, `chuyencongdoan-supabase.html`, `duc-supabase.html`), đối chiếu số liệu với bản gốc.
+5. Push các trang pilot lên repo GitHub tương ứng (`Toyotaki` cho 4 trang trong repo này, `Ton-kho-NVL` cho `index-supabase.html`) để có link công khai chạy song song — **các trang gốc giữ nguyên, không đổi**.
+6. Sau khi đối chiếu ổn định (khuyến nghị 1 tuần/module), mới cân nhắc đổi link chính thức trên `index.html` trang chủ trỏ sang bản Supabase, và tắt dần nguồn CSV/GAS cũ.
+7. Kiểm tra/sửa giao dịch lỗi 1050 "tấn" của `ADC12-DAK` trong Sheet NVL gốc (không phụ thuộc migrate).
