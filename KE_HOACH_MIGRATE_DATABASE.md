@@ -614,6 +614,23 @@ Checklist deploy dưới đây (mục cũ) coi như bước 1/3/4 đã xong; gi�
 
 **🎉 Sau bước này, TOÀN BỘ các công cụ chính của khối Đúc+IPQC+In tem (Phase 4) đã có bản Supabase tĩnh**: `duc-dashboard.html`, `intem.html`, `ipqc.html`, `qc-manager.html`, `ncp-detail.html`, `khsx-tuan.html`. Còn lại theo đúng tinh thần "bỏ hẳn Google" người dùng yêu cầu: `mobile.html` (bản rút gọn cho điện thoại — CHƯA làm, mức độ ưu tiên thấp vì `duc-dashboard.html`/`ipqc.html` đã responsive), và kiểm tra lại Tồn kho NVL (mục cuối trong thứ tự đã thống nhất — xem mục 12 tiếp).
 
+### Phase 5 — Tồn kho NVL (2026-08-14, đang làm)
+
+**Khảo sát**: `D:\Project\MES\Quản lý NVL` là **repo GIT RIÊNG** (remote `Ton-kho-NVL`, deploy `https://dangnaf-toyo.github.io/Ton-kho-NVL/`), KHÔNG phải Apps Script như IPQC/QC Manager — vẫn là web tĩnh gọi Web App Apps Script (`code.js`, `GAS_URL`) làm backend, dữ liệu Google Sheet. Repo này đã có sẵn `index-supabase.html` (321KB) từ giai đoạn migrate database trước (mục 9.5) — nhưng đó chỉ là **bản pilot lai**: vẫn còn 13 chỗ gọi `GAS_URL`/Apps Script cho phần ghi, chỉ đọc thử qua Supabase — KHÔNG phải bản thay thế hoàn chỉnh, không dùng được cho mục tiêu "bỏ hẳn Google".
+
+**Đã có sẵn từ trước** (giai đoạn migrate DB): `Dashboard_SL_CL/supabase/schema_nvl.sql` (đọc công khai: `nvl_materials`, `nvl_ton_dau_ky`, `nvl_ke_hoach_ngay`, `nvl_giao_dich`, `nvl_tem`, `nvl_cai_dat`, view `nvl_v_ton_hien_tai`) + `import-nvl.mjs` (script import 1 lần, đã chạy, có dữ liệu).
+
+**✅ Mới — `supabase/migration_nvl_step1_write.sql`** (đã commit+push `88ef74c` vào repo `Dashboard_SL_CL`, vì toàn bộ SQL của mọi module đều tập trung ở đây): bổ sung RPC ghi cho toàn bộ action ghi của `code.js` gốc — `nvl_add_transaction`, `nvl_update_opening`, `nvl_update_settings`, `nvl_update_plan_nhap`, `nvl_recalc_all_plan_stock`, `nvl_create_tem`, `nvl_process_multi_transaction`, `nvl_check_fifo` (đọc, public), `nvl_upsert_material`.
+- **Quyết định quan trọng**: `nvl_materials` từ nay là NGUỒN CHÍNH THỨC DUY NHẤT cho danh mục NVL, thay hẳn việc đọc "KHSX Master" (Google Sheet cột V:W) — đúng tiền lệ đã áp dụng cho `master_products`/`master_machines`/`master_employees` ở khối Đúc. Trang tĩnh mới cần có màn quản lý danh mục nhỏ (thêm/sửa mã qua `nvl_upsert_material`).
+- **Đơn vị**: schema mới ĐÃ chuẩn hoá toàn bộ về KG (bản gốc lẫn lộn kg/tấn giữa các sheet — xem Readme.md của repo NVL, gotcha #3) — trang tĩnh mới KHÔNG được tính lại quy đổi tấn, hiển thị thẳng kg mọi nơi.
+- Tính "tồn sau" khi ghi giao dịch: dùng `select ... for update` khoá theo mã NVL (trên `nvl_ton_dau_ky`) để 2 giao dịch cùng mã gọi đồng thời không tính sai — thay cho `LockService` của Apps Script cũ.
+- **Chưa chạy trên Supabase** — cần user chạy trước khi test.
+
+**✅ Đã copy `shared/supabase-client.js` + `shared/login.html`** vào `D:\Project\MES\Quản lý NVL\shared\` (repo NVL độc lập, không thể tham chiếu chéo sang repo `Dashboard_SL_CL` vì là 2 GitHub Pages site khác nhau — mỗi repo cần bản sao riêng).
+
+**⏳ Đang làm (agent nền)**: giao cho agent nền viết `D:\Project\MES\Quản lý NVL\index-final.html` — bản thay thế tĩnh hoàn chỉnh cho `index.html` gốc (2926 dòng, có nhúng ~174KB base64 thư viện QR/camera). Chủ đích đổi 2 thư viện: QR scan camera → `jsQR` (cùng pattern đã dùng ổn định ở `chuyencongdoan.html`), QR label in tem → `qrcode-generator` CDN (cùng pattern đã dùng ở `intem.html`) — thay vì giữ khối base64 nhúng cũ (không cần thiết nữa vì không còn chạy trong sandbox Apps Script). Giữ nguyên `Chart.js` (CDN, không nhúng) cho biểu đồ kế hoạch 30 ngày.
+- **Việc cần làm tiếp khi agent xong**: đọc báo cáo, kiểm tra kỹ trước khi đưa user test (đặc biệt điểm quy đổi đơn vị và logic FIFO), rồi **commit+push vào ĐÚNG repo `Ton-kho-NVL`** (khác remote với `Dashboard_SL_CL` — cần `cd "D:\Project\MES\Quản lý NVL"` trước khi git add/commit/push), và cập nhật `home-supabase.html` (ở repo `Dashboard_SL_CL`) thêm thẻ trỏ sang link GitHub Pages của repo NVL (`https://dangnaf-toyo.github.io/Ton-kho-NVL/index-final.html` — hoặc đổi tên file khi deploy chính thức nếu muốn URL gọn hơn, ví dụ đổi thành `index.html` sau khi user xác nhận OK, ghi đè bản Apps Script cũ).
+
 ---
 
 **Việc cần làm ngay tiếp theo (lịch sử, đã gộp vào checklist trên)**:
