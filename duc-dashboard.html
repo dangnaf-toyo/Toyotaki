@@ -20,29 +20,30 @@
     · qc-manager.html      (QcManager.html — giám sát QC, tiêu chuẩn IPQC, NCP)
     · ncp-detail.html      (NcpDetail.html — xử lý SP không phù hợp đầy đủ)
     · mobile.html          (bản rút gọn cho điện thoại)
+    · khsx-tuan.html       (trang riêng để bộ phận kế hoạch nhập KHSX tuần —
+                            thay Google Sheet "Tuan_Hien_Tai", nguồn cho nút
+                            "⚡ Nạp kế hoạch từ KHSX tuần" dưới đây)
 
   ĐÃ CHỦ ĐÍCH BỎ (ghi rõ để không tưởng là thiếu sót):
-  1) "⚡ Nạp kế hoạch từ KHSX tuần" (nút btn-khsx-batch + modal-khsx-batch của
-     bản cũ): dữ liệu nguồn là sheet KHSX "Tuan_Hien_Tai" — CHƯA từng được
-     import sang Supabase. Trưởng ca vẫn gán kế hoạch thủ công từng máy như
-     bình thường. Muốn khôi phục: viết script import KHSX tuần rồi thêm RPC gợi ý.
-  2) ensurePersonnelInMaster_ (tự ghi tên nhân sự gõ tay ngược lại KHSX Master):
+  1) ensurePersonnelInMaster_ (tự ghi tên nhân sự gõ tay ngược lại KHSX Master):
      bỏ — phạm vi này không có đường ghi vào master data. Tên gõ tay VẪN lưu
      được bình thường (p_nv_ca_ngay/p_nv_ca_dem là text tự do, không FK), chỉ
      là lần sau không tự gợi ý; trong cùng phiên vẫn được thêm vào datalist.
-  3) Toàn bộ luồng NCP (mở case / lọc / sửa / báo phế / nguyên nhân & đối sách):
+  2) Toàn bộ luồng NCP (mở case / lọc / sửa / báo phế / nguyên nhân & đối sách):
      Index.html gốc KHÔNG có điểm vào NCP nào (nằm ở QcManager.html/NcpDetail.html)
      → không dựng ở đây, để cho ncp-detail.html + qc-manager.html sau này.
-  4) Form nộp kết quả kiểm IPQC + quản lý tiêu chuẩn IPQC: Index.html gốc chỉ
+  3) Form nộp kết quả kiểm IPQC + quản lý tiêu chuẩn IPQC: Index.html gốc chỉ
      hiển thị BADGE "đang chờ IPQC kiểm" (giữ nguyên ở đây, đọc từ
      duc_get_ipqc_due_by_id_dong). Form nộp nằm ở Ipqc.html/QcManager.html.
-  5) Báo cáo kết ca dạng Google Docs → PDF: thay bằng báo cáo HTML/CSS in ngay
+  4) Báo cáo kết ca dạng Google Docs → PDF: thay bằng báo cáo HTML/CSS in ngay
      trên trình duyệt (window.print + @media print) từ dữ liệu duc_end_shift trả về.
-  6) Báo cáo tuần xuất ra Google Sheet: thay bằng bảng tổng hợp HTML in được,
+  5) Báo cáo tuần xuất ra Google Sheet: thay bằng bảng tổng hợp HTML in được,
      tự tổng hợp client-side từ bảng duc_lich_su_san_xuat (nguồn dữ liệu y hệt
      bản cũ — chỉ các ca ĐÃ kết ca mới có trong bảng này).
-  7) duc_acquire_lock / duc_release_lock: có sẵn ở backend nhưng Index.html gốc
+  6) duc_acquire_lock / duc_release_lock: có sẵn ở backend nhưng Index.html gốc
      chưa từng gọi → giữ nguyên hành vi, không nối vào UI.
+  7) "⚡ Nạp kế hoạch từ KHSX tuần" ĐÃ khôi phục: đọc bảng duc_khsx_tuan_plan
+     (nhập qua khsx-tuan.html) thay vì Google Sheet KHSX gốc.
   ============================================================================
 -->
 
@@ -345,7 +346,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
       <span class="live-badge"><span class="live-dot"></span> <span id="live-status">Đang tải…</span></span>
       <button class="btn-outline" id="btn-fullscreen">⛶ Toàn màn hình</button>
       <button class="btn-outline" id="btn-refresh">↻ Làm mới</button>
-      <!-- Nút "⚡ Nạp kế hoạch từ KHSX tuần" của bản cũ đã CHỦ ĐÍCH BỎ — xem ghi chú đầu file (mục 1). -->
+      <button class="btn-outline" id="btn-khsx-batch" onclick="openKhsxBatchModal()">⚡ Nạp kế hoạch từ KHSX tuần</button>
     </div>
   </div>
 
@@ -393,6 +394,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
         <input type="text" id="mp-so-khuon" placeholder="Chọn mã SP trước để lọc khuôn">
         <div id="mp-so-khuon-hint" style="margin-top:3px;font-size:10px;color:var(--text-muted)"></div>
       </div>
+      <div id="mp-khsx-suggest" style="display:none;margin-bottom:8px;padding:8px 10px;border-radius:6px;font-size:11px;line-height:1.5"></div>
       <div class="field-row">
         <div class="field"><label>KH ca <span class="req">*</span></label><input type="number" id="mp-kh-ca" min="0"></div>
         <div class="field"><label>KH tuần</label><input type="number" id="mp-kh-tuan" min="0"></div>
@@ -432,6 +434,34 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
         <button class="btn-outline" id="mp-btn-extend" onclick="openExtendShiftModal()" style="display:none;background:#FEF3C7;border-color:#F59E0B;color:#B45309;font-weight:600">⏱ Tăng ca máy này</button>
         <button class="btn-outline" onclick="closeModal()">Huỷ</button>
         <button class="btn btn-primary" onclick="submitPlan()">Lưu kế hoạch</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Nạp kế hoạch hàng loạt từ KHSX tuần (nguồn: bảng duc_khsx_tuan_plan, nhập qua khsx-tuan.html) -->
+<div class="modal-mask" id="modal-khsx-batch">
+  <div class="modal" style="max-width:640px">
+    <div class="modal-head">
+      <div class="modal-title">⚡ Nạp kế hoạch từ KHSX tuần</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="background:var(--bg-sunken);border-radius:6px;padding:8px 12px;font-size:11px;color:var(--text-muted);margin-bottom:10px">
+        Chỉ liệt kê các máy <b>chưa có kế hoạch</b> trong ca hiện tại và có gợi ý từ KHSX tuần (ngày <span id="kb-ngay-label">—</span>).
+        KH ca được chia đều 50/50 từ KH ngày — có thể sửa trước khi lưu. Bỏ chọn máy nào không muốn nạp.
+        Kế hoạch tuần nhập/sửa tại <a href="khsx-tuan.html" target="_blank">khsx-tuan.html</a>.
+      </div>
+      <div id="kb-list" style="display:flex;flex-direction:column;gap:8px;max-height:50vh;overflow-y:auto"></div>
+      <div id="kb-empty" style="display:none;font-size:12px;color:var(--text-muted);padding:12px 0;text-align:center">
+        Không có máy nào đủ điều kiện nạp (đã có kế hoạch hết, hoặc KHSX tuần không có dữ liệu/xung đột cho ngày này).
+      </div>
+    </div>
+    <div class="modal-foot">
+      <span class="hint" id="kb-count-label"></span>
+      <div class="modal-actions">
+        <button class="btn-outline" onclick="closeModal()">Huỷ</button>
+        <button class="btn btn-primary" id="kb-btn-save" onclick="submitKhsxBatch()">Lưu các máy đã chọn</button>
       </div>
     </div>
   </div>
@@ -1074,6 +1104,7 @@ const state = {
   endShiftMachines: [],
   khuonManageMoldsCache: null, khuonManageIssuesCache: null,
   moldIssueRefresh: null,
+  weeklyPlanSuggestions: {}, weeklyPlanSuggestionsForNgay: null,
 };
 
 if (state.mode === 'wallboard') document.body.classList.add('wallboard-mode');
@@ -1322,6 +1353,7 @@ async function bootstrap(){
   attachEventListeners();
   startClock();
   await loadShiftState(true);
+  loadWeeklyPlanSuggestions();
   restoreDraft();
 }
 
@@ -1571,6 +1603,57 @@ function onShiftContextChange(){
   state.ca = document.getElementById('sel-ca').value;
   state.phuongAnCa = document.getElementById('sel-phuong-an').value;
   loadShiftState(true);
+  loadWeeklyPlanSuggestions();
+}
+
+// =============================================================================
+// KHSX TUẦN — thay Google Sheet "Tuan_Hien_Tai" (file KHSX) bằng bảng Supabase
+// duc_khsx_tuan_plan (nhập/sửa qua khsx-tuan.html). Port getWeeklyPlanFromKHSX()/
+// getWeeklyPlanSuggestions_() (MasterData.js): KH ngày chia đều 50/50 cho 2 ca;
+// nếu 1 máy có >1 dòng KH khác 0 cùng ngày → conflict, không tự chọn.
+// =============================================================================
+async function loadWeeklyPlanSuggestions(){
+  if (!state.ngay) return;
+  const ngayForThisCall = state.ngay;
+  try {
+    const d = new Date(ngayForThisCall + 'T00:00:00');
+    const jsDay = d.getDay();                    // 0=CN,1=T2,...6=T7
+    const dayIdx = jsDay === 0 ? 6 : jsDay - 1;   // 0=T2,...6=CN
+    const monday = new Date(d);
+    monday.setDate(monday.getDate() + (jsDay === 0 ? -6 : 1 - jsDay));
+    const mondayStr = monday.getFullYear() + '-' + pad(monday.getMonth() + 1) + '-' + pad(monday.getDate());
+    const dayCols = ['t2', 't3', 't4', 't5', 't6', 't7', 'cn'];
+
+    const { data, error } = await sb.from('duc_khsx_tuan_plan').select('*').eq('tuan_bat_dau', mondayStr);
+    if (error) throw error;
+
+    const byMachine = {};
+    (data || []).forEach(r => {
+      const qty = Number(r[dayCols[dayIdx]]) || 0;
+      if (qty <= 0) return;
+      if (!byMachine[r.ma_may]) byMachine[r.ma_may] = [];
+      byMachine[r.ma_may].push({ ma_sp: r.ma_sp, ten_sp: r.ten_sp, so_khuon: r.so_khuon, kh_ngay: qty, kh_tuan: r.kh_tuan });
+    });
+
+    const suggestions = {};
+    Object.keys(byMachine).forEach(m => {
+      const list = byMachine[m];
+      if (list.length === 1) {
+        suggestions[m] = {
+          conflict: false, ma_sp: list[0].ma_sp, ten_sp: list[0].ten_sp, so_khuon: list[0].so_khuon,
+          kh_ngay: list[0].kh_ngay, kh_tuan: list[0].kh_tuan, kh_ca: Math.round(list[0].kh_ngay / 2),
+        };
+      } else {
+        suggestions[m] = { conflict: true, options: list };
+      }
+    });
+
+    if (ngayForThisCall !== state.ngay) return;   // ngày đã đổi trong lúc chờ — bỏ kết quả cũ
+    state.weeklyPlanSuggestions = suggestions;
+    state.weeklyPlanSuggestionsForNgay = ngayForThisCall;
+  } catch (e) {
+    console.error('loadWeeklyPlanSuggestions lỗi:', e);
+  }
 }
 
 // =============================================================================
@@ -2145,6 +2228,135 @@ function onSoKhuonSelectChange(prefix){
 // =============================================================================
 // MODAL: Gán / chỉnh sửa kế hoạch  → duc_upsert_plan / duc_assign_paired_plan
 // =============================================================================
+function applyWeeklyPlanSuggestion_(maMay, isEditingExisting){
+  const box = document.getElementById('mp-khsx-suggest');
+  box.style.display = 'none';
+  box.textContent = '';
+
+  if (isEditingExisting) return;   // không ghi đè dòng đang chỉnh sửa
+  if (state.weeklyPlanSuggestionsForNgay !== state.ngay) return;   // gợi ý chưa tải xong / lệch ngày
+  const sug = state.weeklyPlanSuggestions[maMay];
+  if (!sug) return;
+
+  if (sug.conflict) {
+    box.style.display = '';
+    box.style.background = 'var(--warn-bg)'; box.style.color = 'var(--warn-fg)';
+    box.innerHTML = '⚠️ KHSX tuần có <b>' + sug.options.length + ' dòng kế hoạch</b> khác nhau cho máy này trong ngày — '
+      + 'không tự điền, vui lòng chọn/nhập tay: '
+      + sug.options.map(o => escapeHtml(o.ma_sp) + ' (KH ngày ' + fmtNum(o.kh_ngay) + ')').join(', ');
+    return;
+  }
+
+  document.getElementById('mp-ma-sp').value = sug.ma_sp;
+  document.getElementById('mp-ten-sp').value = sug.ten_sp || state.productMap[sug.ma_sp] || '';
+  populateSoKhuonField('mp', sug.ma_sp, sug.so_khuon || null);
+  document.getElementById('mp-kh-ca').value = sug.kh_ca;
+
+  box.style.display = '';
+  box.style.background = 'var(--run-bg)'; box.style.color = 'var(--run-fg)';
+  box.innerHTML = '📋 Đã tự điền theo KHSX tuần: <b>' + escapeHtml(sug.ma_sp) + '</b> — KH ngày ' + fmtNum(sug.kh_ngay)
+    + ' → chia 2 ca ≈ <b>' + fmtNum(sug.kh_ca) + '</b>/ca. Kiểm tra lại trước khi Lưu.';
+}
+
+// =============================================================================
+// MODAL: Nạp kế hoạch hàng loạt từ KHSX tuần
+// =============================================================================
+async function openKhsxBatchModal(){
+  if (!(await ensureAuth())) return;
+  if (state.weeklyPlanSuggestionsForNgay !== state.ngay) {
+    showToast('Đang tải gợi ý KHSX tuần, thử lại sau ít giây', true);
+    loadWeeklyPlanSuggestions();
+    return;
+  }
+  document.getElementById('kb-ngay-label').textContent = state.ngay;
+
+  const rowsByMachine = {};
+  state.rows.forEach(r => {
+    if (!rowsByMachine[r.ma_may]) rowsByMachine[r.ma_may] = [];
+    rowsByMachine[r.ma_may].push(r);
+  });
+  const machinesNoPlan = state.machines.filter(m =>
+    !(rowsByMachine[m] && rowsByMachine[m].some(r => r.ma_sp)));
+
+  const candidates = machinesNoPlan
+    .filter(m => state.weeklyPlanSuggestions[m] && !state.weeklyPlanSuggestions[m].conflict)
+    .sort(naturalCompare);
+
+  const list = document.getElementById('kb-list');
+  const empty = document.getElementById('kb-empty');
+  list.innerHTML = '';
+
+  if (candidates.length === 0) {
+    list.style.display = 'none';
+    empty.style.display = '';
+  } else {
+    list.style.display = '';
+    empty.style.display = 'none';
+    candidates.forEach(m => {
+      const sug = state.weeklyPlanSuggestions[m];
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--border);border-radius:6px';
+      row.innerHTML =
+        '<input type="checkbox" class="kb-check" data-ma-may="' + escapeHtml(m) + '" checked style="width:16px;height:16px;flex:none">'
+        + '<div style="flex:1;min-width:0">'
+        + '<div style="font-weight:600;font-size:12.5px">' + escapeHtml(m) + ' — ' + escapeHtml(sug.ma_sp) + '</div>'
+        + '<div style="font-size:10.5px;color:var(--text-muted)">' + escapeHtml(sug.ten_sp || '')
+        + (sug.so_khuon ? ' · Khuôn ' + escapeHtml(sug.so_khuon) : '') + '</div>'
+        + '</div>'
+        + '<div style="width:90px;flex:none"><input type="number" class="kb-kh-ca" min="0" value="' + sug.kh_ca + '" style="width:100%"></div>';
+      list.appendChild(row);
+    });
+  }
+
+  list.querySelectorAll('.kb-check').forEach(chk => chk.addEventListener('change', updateKhsxBatchCount));
+  updateKhsxBatchCount();
+  document.getElementById('modal-khsx-batch').classList.add('open');
+}
+
+function updateKhsxBatchCount(){
+  const n = document.querySelectorAll('#kb-list .kb-check:checked').length;
+  document.getElementById('kb-count-label').textContent = n > 0 ? 'Đã chọn ' + n + ' máy' : '';
+}
+
+async function submitKhsxBatch(){
+  const checks = Array.from(document.querySelectorAll('#kb-list .kb-check:checked'));
+  if (checks.length === 0) return showToast('Chưa chọn máy nào', true);
+  if (!(await ensureAuthOnSubmit('modal-khsx-batch'))) return;
+
+  const items = checks.map(chk => {
+    const maMay = chk.dataset.maMay;
+    const sug = state.weeklyPlanSuggestions[maMay];
+    const khCaInput = chk.closest('div').querySelector('.kb-kh-ca');
+    return { maMay, sug, khCa: Number(khCaInput.value) || sug.kh_ca };
+  });
+
+  const btn = document.getElementById('kb-btn-save');
+  btn.disabled = true;
+  showOverlay('Đang nạp kế hoạch cho ' + items.length + ' máy...');
+  let ok = 0, fail = [];
+  for (const it of items) {
+    try {
+      await rpcWrite('duc_upsert_plan', {
+        p_ngay: state.ngay, p_ca: state.ca, p_phuong_an_ca: state.phuongAnCa,
+        p_ma_may: it.maMay, p_ma_sp: it.sug.ma_sp, p_ten_sp: it.sug.ten_sp || state.productMap[it.sug.ma_sp] || '',
+        p_so_khuon: it.sug.so_khuon || '', p_kh_ca: it.khCa, p_kh_tuan: Number(it.sug.kh_tuan) || 0,
+        p_nv_ca_ngay: '', p_nv_ca_dem: '', p_user: state.user,
+      });
+      addMoldToProductMap(it.sug.ma_sp, it.sug.so_khuon || '');
+      ok++;
+    } catch (e) { fail.push(it.maMay + ': ' + e.message); }
+  }
+  hideOverlay(); btn.disabled = false;
+
+  if (fail.length === 0) {
+    closeModal();
+    showToast('✓ Đã nạp kế hoạch cho ' + ok + ' máy');
+  } else {
+    showToast('Nạp được ' + ok + '/' + items.length + ' máy. Lỗi: ' + fail.join('; '), true);
+  }
+  loadShiftState(false);
+}
+
 async function openPlanModal(maMay, idDong){
   if (!(await ensureAuth())) return;
   state.currentTarget = { ma_may: maMay, id_dong: idDong };
@@ -2159,6 +2371,8 @@ async function openPlanModal(maMay, idDong){
   document.getElementById('mp-kh-tuan').value = existing ? (existing.kh_tuan || '') : '';
   document.getElementById('mp-nv-ngay').value = existing ? (existing.nv_ca_ngay || '') : '';
   document.getElementById('mp-nv-dem').value = existing ? (existing.nv_ca_dem || '') : '';
+
+  applyWeeklyPlanSuggestion_(maMay, !!(existing && idDong));
 
   const btnDel = document.getElementById('mp-btn-delete');
   if (existing && idDong) {
