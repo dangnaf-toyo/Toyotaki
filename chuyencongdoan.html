@@ -74,10 +74,14 @@ input:focus,select:focus{outline:none;border-color:#C87941;
 </div>
 
 <div class="card">
-  <div class="card-ttl">📷 Bước 1 — Chụp ảnh mã QR trên tem</div>
-  <button class="scan-btn" id="btnScan">📷&nbsp; Đọc QR Code</button>
+  <div class="card-ttl">📷 Bước 1 — Quét mã QR trên tem</div>
+  <button class="scan-btn" id="btnScan">📷&nbsp; Mở Camera Quét QR</button>
   <input type="file" id="qrFileInput" accept="image/*" capture="environment" style="display:none">
-  <div class="empty-hint" id="emptyHint">Chưa quét tem nào. Bấm nút phía trên, camera sẽ mở ra để chụp ảnh mã QR trên tem.</div>
+  <div class="scan-video-wrap" id="scanVideoWrap" style="display:none;">
+    <video id="scanVideo" playsinline autoplay muted style="width:100%;border-radius:10px;background:#000;"></video>
+    <button class="scan-btn rescan" id="btnCancelScan" type="button" style="margin-top:8px;">✖ Huỷ quét</button>
+  </div>
+  <div class="empty-hint" id="emptyHint">Chưa quét tem nào. Bấm nút phía trên, hướng camera về phía mã QR trên tem — hệ thống tự nhận diện, không cần bấm chụp.</div>
 
   <div class="scanned-box" id="scannedBox">
     <div class="badge-ok">✅ Đã đọc được tem</div>
@@ -189,14 +193,74 @@ async function loadDanhMuc(){
 // chẩn đoán trong giai đoạn test, có thể gỡ sau khi ổn định.
 window.addEventListener("error", (e) => { err("Lỗi JS: " + e.message); });
 
-function openCamera(){
-  showMsg("📷 Đang mở camera…", "wait");
-  document.getElementById("qrFileInput").click();
+/* ─── Quét QR trực tiếp qua camera (getUserMedia + vòng lặp jsQR) ───────────
+   Bản Apps Script cũ phải né cách này vì bị sandbox Google chặn camera trực
+   tiếp — web tĩnh thường không bị hạn chế đó, quét được ngay khi đưa mã QR
+   vào khung hình, không cần bấm chụp. Có fallback "chụp ảnh tĩnh" (input
+   file cũ) cho trình duyệt không hỗ trợ getUserMedia. ─────────────────── */
+let scanStream = null;
+let scanRAF = null;
+
+async function openCamera(){
+  document.getElementById("msg").style.display = "none";
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+    showMsg("📷 Trình duyệt không hỗ trợ camera trực tiếp — mở chế độ chụp ảnh…", "wait");
+    document.getElementById("qrFileInput").click();
+    return;
+  }
+  try {
+    scanStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+  } catch(e){
+    err("Không mở được camera: " + e.message + ". Kiểm tra đã cho phép quyền Camera cho trang này chưa (biểu tượng khoá/camera trên thanh địa chỉ trình duyệt).");
+    return;
+  }
+  const video = document.getElementById("scanVideo");
+  video.srcObject = scanStream;
+  document.getElementById("scanVideoWrap").style.display = "block";
+  document.getElementById("emptyHint").style.display = "none";
+  document.getElementById("scannedBox").classList.remove("show");
+  document.getElementById("formSection").classList.remove("show");
+  await video.play();
+  scanRAF = requestAnimationFrame(scanLoop);
 }
+
+function stopCamera(){
+  if (scanRAF) cancelAnimationFrame(scanRAF);
+  scanRAF = null;
+  if (scanStream){ scanStream.getTracks().forEach(t => t.stop()); scanStream = null; }
+  document.getElementById("scanVideoWrap").style.display = "none";
+}
+
+function scanLoop(){
+  const video = document.getElementById("scanVideo");
+  if (video.readyState === video.HAVE_ENOUGH_DATA){
+    try {
+      const canvas = document.getElementById("scanCanvas");
+      const w = video.videoWidth, h = video.videoHeight;
+      canvas.width = w; canvas.height = h;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(video, 0, 0, w, h);
+      const data = ctx.getImageData(0, 0, w, h);
+      const code = jsQR(data.data, data.width, data.height, { inversionAttempts: "dontInvert" });
+      if (code && code.data){
+        stopCamera();
+        onQrDecoded(code.data);
+        return;
+      }
+    } catch(e){ /* frame lỗi thoáng qua — bỏ qua, thử tiếp frame sau */ }
+  }
+  scanRAF = requestAnimationFrame(scanLoop);
+}
+
 document.getElementById("btnScan").addEventListener("click", openCamera);
 document.getElementById("btnRescan").addEventListener("click", openCamera);
+document.getElementById("btnCancelScan").addEventListener("click", () => {
+  stopCamera();
+  document.getElementById("emptyHint").style.display = "block";
+});
 document.getElementById("qrFileInput").addEventListener("change", onFileChosen);
 
+/* Fallback chụp ảnh tĩnh — chỉ dùng khi trình duyệt không hỗ trợ getUserMedia. */
 function onFileChosen(evt){
   showMsg("⏳ Đang xử lý ảnh vừa chụp…", "wait");
   const file = evt.target.files && evt.target.files[0];
