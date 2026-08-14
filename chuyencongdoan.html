@@ -160,6 +160,7 @@ input:focus,select:focus{outline:none;border-color:#C87941;
   </div>
   <div class="card">
     <div class="card-ttl">📋 Phiếu đang chờ xác nhận</div>
+    <button type="button" class="confirm-btn" id="btnConfirmAll" style="display:none;margin-bottom:12px;">✅ Xác nhận tất cả</button>
     <div id="confirmList" style="font-size:13px;color:#999;">Chọn bộ phận ở trên để xem danh sách.</div>
   </div>
 </div>
@@ -467,9 +468,14 @@ async function loadConfirmDanhMuc(){
 
 document.getElementById("confirmCongDoan").addEventListener("change", loadPendingList);
 
+let pendingIds = [];
+
 async function loadPendingList(){
   const dept = document.getElementById("confirmCongDoan").value;
   const listEl = document.getElementById("confirmList");
+  const allBtn = document.getElementById("btnConfirmAll");
+  allBtn.style.display = "none";
+  pendingIds = [];
   if (!dept){ listEl.innerHTML = 'Chọn bộ phận ở trên để xem danh sách.'; return; }
   listEl.textContent = 'Đang tải…';
   const { data, error } = await sb.from('cd_chuyen_cong_doan_log')
@@ -479,6 +485,9 @@ async function loadPendingList(){
     .order('thoi_gian_chuyen', { ascending: false });
   if (error){ listEl.innerHTML = '❌ Lỗi tải danh sách: ' + error.message; return; }
   if (!data || !data.length){ listEl.innerHTML = 'Không có phiếu nào đang chờ xác nhận cho bộ phận này.'; return; }
+  pendingIds = data.map(r => r.id_phieu);
+  allBtn.style.display = data.length > 1 ? "block" : "none";
+  allBtn.textContent = "✅ Xác nhận tất cả (" + data.length + " phiếu)";
   listEl.innerHTML = '';
   data.forEach(r => {
     const div = document.createElement('div');
@@ -496,23 +505,49 @@ async function loadPendingList(){
   });
 }
 
-async function confirmOne(idPhieu, btn){
+async function requireNguoiXacNhanAndAuth(){
   const nguoiXacNhan = document.getElementById("confirmNguoiXacNhan").value;
-  if (!nguoiXacNhan){ err("Chưa chọn Người xác nhận."); return; }
+  if (!nguoiXacNhan){ err("Chưa chọn Người xác nhận."); return null; }
   const session = await MesAuth.getSession();
   if (!session){
     err("Cần đăng nhập trước khi xác nhận. Đang chuyển sang trang đăng nhập…");
     setTimeout(() => { window.location.href = 'shared/login.html?returnTo=' + encodeURIComponent(window.location.href); }, 1200);
-    return;
+    return null;
   }
+  return nguoiXacNhan;
+}
+
+async function confirmOne(idPhieu, btn){
+  const nguoiXacNhan = await requireNguoiXacNhanAndAuth();
+  if (!nguoiXacNhan) return;
   btn.disabled = true;
   btn.textContent = "⏳ Đang xử lý...";
-  const thoiGianXacNhan = new Date().toLocaleString('vi-VN');
   const { error } = await sb.rpc('cd_xac_nhan_chuyen', {
-    p_id_phieu: idPhieu, p_nguoi_giao: nguoiXacNhan, p_ngay_gio_xac_nhan: thoiGianXacNhan
+    p_id_phieu: idPhieu, p_nguoi_giao: nguoiXacNhan, p_ngay_gio_xac_nhan: new Date().toLocaleString('vi-VN')
   });
   if (error){ err("Lỗi xác nhận: " + error.message); btn.disabled = false; btn.textContent = "✅ Xác nhận đã giao"; return; }
   showMsg("✅ Đã xác nhận phiếu " + idPhieu, "ok", 4000);
+  loadPendingList();
+}
+
+document.getElementById("btnConfirmAll").addEventListener("click", confirmAll);
+async function confirmAll(){
+  const nguoiXacNhan = await requireNguoiXacNhanAndAuth();
+  if (!nguoiXacNhan) return;
+  const btn = document.getElementById("btnConfirmAll");
+  const ids = pendingIds.slice();
+  btn.disabled = true;
+  let done = 0, failed = 0;
+  for (const id of ids){
+    btn.textContent = "⏳ Đang xác nhận " + (done + failed + 1) + "/" + ids.length + "…";
+    const { error } = await sb.rpc('cd_xac_nhan_chuyen', {
+      p_id_phieu: id, p_nguoi_giao: nguoiXacNhan, p_ngay_gio_xac_nhan: new Date().toLocaleString('vi-VN')
+    });
+    if (error) failed++; else done++;
+  }
+  btn.disabled = false;
+  if (failed) showMsg("⚠️ Đã xác nhận " + done + "/" + ids.length + " phiếu — " + failed + " phiếu lỗi.", "err", 6000);
+  else showMsg("✅ Đã xác nhận tất cả " + done + " phiếu.", "ok", 5000);
   loadPendingList();
 }
 
