@@ -1078,10 +1078,9 @@ const CONFIG = {
   POLL_MS: 15000,
 };
 
-// URL trang In tem QR. Vẫn trỏ sang Web App Apps Script cũ (đang chạy song song
-// theo đúng ghi chú trong các file migration) — khi trang "In tem QR" tĩnh được
-// viết xong thì đổi hằng này sang đường dẫn nội bộ (VD 'intem.html').
-const TEM_PRINT_URL = 'https://script.google.com/macros/s/AKfycbzxYpLyLi4o9pDC4FutQglo0zM7YBMyKGou9WrivmFs_V7eENBza1eiXudfRJuGW94F/exec';
+// URL trang In tem QR — nay trỏ sang bản tĩnh Supabase (intem.html), thay Web
+// App Apps Script cũ.
+const TEM_PRINT_URL = 'intem.html';
 
 // =============================================================================
 // STATE
