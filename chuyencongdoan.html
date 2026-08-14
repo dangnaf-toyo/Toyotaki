@@ -160,8 +160,10 @@ input:focus,select:focus{outline:none;border-color:#C87941;
   </div>
   <div class="card">
     <div class="card-ttl">📋 Phiếu đang chờ xác nhận</div>
-    <button type="button" class="confirm-btn" id="btnConfirmAll" style="display:none;margin-bottom:12px;">✅ Xác nhận tất cả</button>
     <div id="confirmList" style="font-size:13px;color:#999;">Chọn bộ phận ở trên để xem danh sách.</div>
+  </div>
+  <div class="card" id="confirmAllCard" style="display:none;">
+    <button type="button" class="confirm-btn" id="btnConfirmAll">✅ Xác nhận tất cả</button>
   </div>
 </div>
 
@@ -473,8 +475,9 @@ let pendingIds = [];
 async function loadPendingList(){
   const dept = document.getElementById("confirmCongDoan").value;
   const listEl = document.getElementById("confirmList");
+  const allCard = document.getElementById("confirmAllCard");
   const allBtn = document.getElementById("btnConfirmAll");
-  allBtn.style.display = "none";
+  allCard.style.display = "none";
   pendingIds = [];
   if (!dept){ listEl.innerHTML = 'Chọn bộ phận ở trên để xem danh sách.'; return; }
   listEl.textContent = 'Đang tải…';
@@ -486,7 +489,7 @@ async function loadPendingList(){
   if (error){ listEl.innerHTML = '❌ Lỗi tải danh sách: ' + error.message; return; }
   if (!data || !data.length){ listEl.innerHTML = 'Không có phiếu nào đang chờ xác nhận cho bộ phận này.'; return; }
   pendingIds = data.map(r => r.id_phieu);
-  allBtn.style.display = data.length > 1 ? "block" : "none";
+  allCard.style.display = data.length > 1 ? "block" : "none";
   allBtn.textContent = "✅ Xác nhận tất cả (" + data.length + " phiếu)";
   listEl.innerHTML = '';
   data.forEach(r => {
