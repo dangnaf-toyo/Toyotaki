@@ -569,6 +569,12 @@ Checklist deploy dưới đây (mục cũ) coi như bước 1/3/4 đã xong; gi�
   5. `duc_report_mold_issue` trả về `text` (không phải `jsonb {ok,...}` như các RPC khác) — đã xử lý riêng trong code, lưu ý nếu sau này chỉnh sửa.
 - **Việc cần làm tiếp theo**: user mở `duc-dashboard.html` trên GitHub Pages, đăng nhập, test từng luồng thực tế (gán kế hoạch, mở/sửa/đóng sự cố, đổi SP kể cả khuôn kép, nhập shot/NG, kết ca xem báo cáo in được, quản lý khuôn, báo vấn đề khuôn, tăng ca). Sau khi OK mới làm tiếp `ipqc-dashboard.html`/`qc-manager.html`/`ncp-detail.html`/`mobile.html`.
 
+**✅ Khôi phục "⚡ Nạp kế hoạch từ KHSX tuần" (2026-08-14), đã commit+push (`5317eb5`)**: user yêu cầu khôi phục tính năng đã chủ đích bỏ. Vấn đề gốc: dữ liệu KHSX tuần nằm ở 1 Google Sheet RIÊNG (`Tuan_Hien_Tai`, file KHSX ID `1WMF1E...`) do bộ phận kế hoạch (PPC) duy trì, không phải Sheet của module Đúc — không thể chỉ "import" 1 lần vì họ cập nhật liên tục. User chọn phương án: **dựng hẳn 1 trang Supabase để bộ phận kế hoạch nhập trực tiếp**, thay hoàn toàn Google Sheet đó (đúng kiến trúc bỏ Google 100%, đổi lại bộ phận kế hoạch phải đổi cách làm việc).
+- `supabase/migration_phase4_step10_khsx_tuan.sql` (mới) — bảng `duc_khsx_tuan_plan` (khoá theo `tuan_bat_dau` (thứ 2 đầu tuần) + `ma_may` + `ma_sp`, đủ cột như sheet gốc: KH tuần, CT giây, giờ công, số khuôn, T2-CN, nhân lực, chu kỳ, ghi chú). Đọc công khai, ghi cần đăng nhập (chưa phân quyền riêng theo bộ phận, giống pattern `sl_comments`). **Chưa chạy trên Supabase.**
+- `khsx-tuan.html` (mới) — trang cho bộ phận kế hoạch: chọn tuần (điều hướng tuần trước/sau/tuần này), bảng liệt kê + modal thêm/sửa dòng, xoá dòng. CRUD trực tiếp qua `supabase-js` (không cần RPC vì không có logic nghiệp vụ phức tạp).
+- `duc-dashboard.html` — khôi phục nút "⚡ Nạp kế hoạch từ KHSX tuần" + modal hàng loạt + gợi ý tự điền trong modal "Gán kế hoạch" (port `getWeeklyPlanSuggestions_`/`applyWeeklyPlanSuggestion_` sang JS client, đọc thẳng `duc_khsx_tuan_plan` theo tuần tương ứng `state.ngay`, tính 50/50 KH ngày → KH ca, phát hiện xung đột nếu 1 máy có >1 dòng KH khác 0 cùng ngày). Cập nhật lại comment đầu file (mục "đã chủ đích bỏ" bớt 1 mục, thêm mục 7 ghi rõ đã khôi phục).
+- **Việc cần làm tiếp theo**: user chạy `migration_phase4_step10_khsx_tuan.sql`, mở `khsx-tuan.html` nhập thử 1-2 dòng kế hoạch cho tuần hiện tại, rồi mở `duc-dashboard.html` bấm "⚡ Nạp kế hoạch từ KHSX tuần" xác nhận gợi ý đúng và lưu được.
+
 ---
 
 **Việc cần làm ngay tiếp theo (lịch sử, đã gộp vào checklist trên)**:
