@@ -185,30 +185,43 @@ async function loadDanhMuc(){
 /* ─── Chụp ảnh + giải mã QR (giữ nguyên cách làm bản cũ: chụp ảnh tĩnh rồi
    giải mã, KHÔNG quét video trực tiếp — camera video live từng bị chặn trong
    sandbox Apps Script; giữ cách này cho ổn định, có thể nâng cấp sau). ─── */
-document.getElementById("btnScan").addEventListener("click", () => document.getElementById("qrFileInput").click());
-document.getElementById("btnRescan").addEventListener("click", () => document.getElementById("qrFileInput").click());
+// Hiện lỗi JS bất kỳ ngay trên màn hình (điện thoại khó xem console) — chỉ để
+// chẩn đoán trong giai đoạn test, có thể gỡ sau khi ổn định.
+window.addEventListener("error", (e) => { err("Lỗi JS: " + e.message); });
+
+function openCamera(){
+  showMsg("📷 Đang mở camera…", "wait");
+  document.getElementById("qrFileInput").click();
+}
+document.getElementById("btnScan").addEventListener("click", openCamera);
+document.getElementById("btnRescan").addEventListener("click", openCamera);
 document.getElementById("qrFileInput").addEventListener("change", onFileChosen);
 
 function onFileChosen(evt){
+  showMsg("⏳ Đang xử lý ảnh vừa chụp…", "wait");
   const file = evt.target.files && evt.target.files[0];
-  if (!file) return;
+  if (!file) { err("Không nhận được ảnh (có thể bạn đã huỷ chụp)."); return; }
+  if (typeof jsQR !== "function") { err("Lỗi tải thư viện đọc QR (jsQR) — kiểm tra kết nối mạng rồi tải lại trang."); return; }
   const url = URL.createObjectURL(file);
   const img = new Image();
   img.onload = () => {
-    const canvas = document.getElementById("scanCanvas");
-    const ctx = canvas.getContext("2d");
-    const w = img.width, h = img.height;
-    canvas.width = w; canvas.height = h;
-    ctx.drawImage(img, 0, 0, w, h);
-    URL.revokeObjectURL(url);
-    const data = ctx.getImageData(0, 0, w, h);
-    let code = null;
-    try { code = jsQR(data.data, data.width, data.height); } catch(e){}
-    if (code && code.data) onQrDecoded(code.data);
-    else err("Không đọc được mã QR trong ảnh vừa chụp. Vui lòng chụp lại, đảm bảo mã QR rõ nét, đủ sáng và nằm giữa khung ảnh.");
+    try {
+      const canvas = document.getElementById("scanCanvas");
+      const ctx = canvas.getContext("2d");
+      const w = img.width, h = img.height;
+      canvas.width = w; canvas.height = h;
+      ctx.drawImage(img, 0, 0, w, h);
+      URL.revokeObjectURL(url);
+      const data = ctx.getImageData(0, 0, w, h);
+      const code = jsQR(data.data, data.width, data.height);
+      if (code && code.data) onQrDecoded(code.data);
+      else err("Không đọc được mã QR trong ảnh vừa chụp (kích thước ảnh " + w + "x" + h + "). Vui lòng chụp lại, đảm bảo mã QR rõ nét, đủ sáng và nằm giữa khung ảnh.");
+    } catch(e){
+      err("Lỗi xử lý ảnh: " + e.message);
+    }
     evt.target.value = "";
   };
-  img.onerror = () => { URL.revokeObjectURL(url); err("Không đọc được ảnh vừa chụp. Vui lòng thử lại."); };
+  img.onerror = () => { URL.revokeObjectURL(url); err("Không đọc được ảnh vừa chụp (lỗi tải ảnh). Vui lòng thử lại."); };
   img.src = url;
 }
 
