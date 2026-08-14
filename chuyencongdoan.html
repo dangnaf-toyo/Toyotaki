@@ -71,6 +71,19 @@ input:focus,select:focus{outline:none;border-color:#C87941;
 .confirm-btn{width:100%;margin-top:8px;padding:9px;border:none;border-radius:8px;
   background:#1a7a3a;color:#fff;font-size:13px;font-weight:700;cursor:pointer}
 .confirm-btn:disabled{opacity:.5;cursor:not-allowed}
+.pending-actions{display:flex;gap:8px;margin-top:8px}
+.pending-actions .confirm-btn{margin-top:0}
+.reject-btn{flex:1;padding:9px;border:1.5px solid #c00;border-radius:8px;
+  background:#fff;color:#c00;font-size:13px;font-weight:700;cursor:pointer}
+.reject-btn:disabled{opacity:.5;cursor:not-allowed}
+.reject-form{display:none;margin-top:10px;padding-top:10px;border-top:1px dashed #eee}
+.reject-form.show{display:block}
+.reject-form textarea{width:100%;border:1.5px solid #ddd;border-radius:7px;padding:8px 10px;
+  font-size:13px;font-family:inherit;resize:vertical;min-height:56px}
+.reject-form .row{display:flex;gap:8px;margin-top:8px}
+.reject-form .row button{flex:1;padding:8px;border-radius:7px;font-size:12.5px;font-weight:700;cursor:pointer}
+.reject-form .btn-send{border:none;background:#c00;color:#fff}
+.reject-form .btn-cancel{border:1.5px solid #ccc;background:#fff;color:#666}
 </style>
 </head>
 <body>
@@ -502,8 +515,22 @@ async function loadPendingList(){
       <div class="sr"><div class="k">SL chuyển</div><div class="v">${r.sl_thuc_chuyen}</div></div>
       <div class="sr"><div class="k">Sang</div><div class="v">${r.cong_doan_nhan} (${r.nguoi_nhan})</div></div>
       <div class="sr"><div class="k">Lúc</div><div class="v">${t}</div></div>
-      <button type="button" class="confirm-btn">✅ Xác nhận đã giao</button>`;
+      <div class="pending-actions">
+        <button type="button" class="confirm-btn">✅ Xác nhận đã giao</button>
+        <button type="button" class="reject-btn">❌ Từ chối</button>
+      </div>
+      <div class="reject-form">
+        <textarea placeholder="Lý do từ chối (bắt buộc)..."></textarea>
+        <div class="row">
+          <button type="button" class="btn-cancel">Huỷ</button>
+          <button type="button" class="btn-send">Gửi từ chối</button>
+        </div>
+      </div>`;
     div.querySelector('.confirm-btn').addEventListener('click', (e) => confirmOne(r.id_phieu, e.target));
+    const rejectForm = div.querySelector('.reject-form');
+    div.querySelector('.reject-btn').addEventListener('click', () => rejectForm.classList.add('show'));
+    div.querySelector('.btn-cancel').addEventListener('click', () => rejectForm.classList.remove('show'));
+    div.querySelector('.btn-send').addEventListener('click', (e) => rejectOne(r.id_phieu, rejectForm, e.target));
     listEl.appendChild(div);
   });
 }
@@ -530,6 +557,22 @@ async function confirmOne(idPhieu, btn){
   });
   if (error){ err("Lỗi xác nhận: " + error.message); btn.disabled = false; btn.textContent = "✅ Xác nhận đã giao"; return; }
   showMsg("✅ Đã xác nhận phiếu " + idPhieu, "ok", 4000);
+  loadPendingList();
+}
+
+async function rejectOne(idPhieu, formEl, btn){
+  const ly_do = formEl.querySelector('textarea').value.trim();
+  if (!ly_do){ err("Chưa nhập lý do từ chối."); return; }
+  const nguoiXacNhan = await requireNguoiXacNhanAndAuth();
+  if (!nguoiXacNhan) return;
+  btn.disabled = true;
+  btn.textContent = "⏳ Đang gửi...";
+  const { error } = await sb.rpc('cd_tu_choi_chuyen', {
+    p_id_phieu: idPhieu, p_nguoi_tu_choi: nguoiXacNhan, p_ly_do: ly_do,
+    p_ngay_gio_xac_nhan: new Date().toLocaleString('vi-VN')
+  });
+  if (error){ err("Lỗi từ chối: " + error.message); btn.disabled = false; btn.textContent = "Gửi từ chối"; return; }
+  showMsg("❌ Đã từ chối phiếu " + idPhieu, "err", 4000);
   loadPendingList();
 }
 

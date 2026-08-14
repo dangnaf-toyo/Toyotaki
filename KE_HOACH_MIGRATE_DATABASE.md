@@ -496,6 +496,8 @@ Checklist deploy dưới đây (mục cũ) coi như bước 1/3/4 đã xong; gi�
 
 **✅ Giai đoạn 3 (Chuyển công đoạn) — TEST OK TOÀN BỘ (2026-08-14)**: quét QR (camera trực tiếp, đã nâng cấp từ chụp ảnh tĩnh — xem lịch sử bên dưới), điền form, ghi vào `cd_chuyen_cong_doan_log` — xác nhận đúng trên Supabase thật. Module này coi như đã bỏ hẳn Google (không còn phụ thuộc Apps Script cho luồng quét/ghi chính).
 
+**✅ Đã thêm nút "Từ chối" cho mỗi phiếu** (kèm ô nhập lý do bắt buộc) — `supabase/migration_phase_D3b_chuyencongdoan_tuchoi.sql` (mới): thêm cột `ly_do_tu_choi`, RPC `cd_tu_choi_chuyen` (set trạng thái 'Đã từ chối' + lưu lý do + người/giờ từ chối), đã revoke anon/grant authenticated theo đúng pattern. **CHƯA TEST.**
+
 **✅ Đã gộp luồng "Xác nhận nhận hàng" vào `chuyencongdoan.html`** (quyết định: gộp chung, không tách trang riêng) — thêm tab "✅ Xác nhận nhận hàng": chọn bộ phận → hiện danh sách phiếu đang chờ (đọc `cd_chuyen_cong_doan_log` lọc `cong_doan_giao` + `trang_thai_xac_nhan`) → bấm xác nhận từng phiếu → gọi RPC `cd_xac_nhan_chuyen`. **CHƯA TEST.** `XacNhanChuyenCongDoan.gs` (Apps Script cũ, gắn Sheet) giữ chạy song song theo quyết định chung, tắt sau khi xác nhận trang mới ổn.
 
 **✅ Giai đoạn 3 (Chuyển công đoạn) — CODE XONG (lịch sử)**:
