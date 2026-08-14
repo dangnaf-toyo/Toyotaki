@@ -546,6 +546,17 @@ Checklist deploy dưới đây (mục cũ) coi như bước 1/3/4 đã xong; gi�
 3. **Pattern chuẩn cho RLS ghi kiểu bảng đơn giản** (comment): `for insert with check (auth.role() = 'authenticated')` + `for update using (...) with check (...)` — xem `migration_phase_D1_sanluong_write.sql`.
 4. **Pattern chuẩn cho RPC `security definer`**: PHẢI thêm `revoke execute ... from anon; grant execute ... to authenticated;` — xem `migration_phase_D3_chuyencongdoan_write.sql`. Không đủ nếu chỉ thêm RLS trên bảng.
 
+**✅ Bước con 8 (`upsertPlan_`/`assignPairedPlan_`/`setIncidentOpen_`/lock/`changeProduct_`/`updateShiftInputs_`/`deletePlan_`/`editOpenIncident_`/`extendMachineShift_`/`recordMoldMaintenance_`/`resolveMoldIssuePending_`/`confirmMoldIssueOutcome_`) — CODE XONG (2026-08-14)**: `supabase/migration_phase4_step8_cahientai_rpc.sql` — vá lỗ hổng phát hiện khi chuẩn bị viết giao diện: các hàm ghi của CaHienTai.js/ShotKhuon.js/VanDeKhuon.js/BanGhiSuCo.js trước đó chỉ tồn tại dạng Apps-Script-only (dùng service_role key), CHƯA có RPC an toàn cho trình duyệt gọi thẳng. File này port toàn bộ. **User CHƯA xác nhận đã chạy — cần chạy trước khi test giao diện Đúc.**
+
+**✅ Bước con 9 (bổ sung — phát hiện khi khảo sát `Api.js`/`MasterData.js` để chuẩn bị viết giao diện) — CODE XONG (2026-08-14)**: `supabase/migration_phase4_step9_frontend_gaps.sql` — 4 phần còn thiếu nốt:
+- `duc_change_product_paired` (port `changeProductPaired_` — đổi sang khuôn kép 2 SP khác nhau).
+- `duc_configure_mold` (port `configureMold_` — cấu hình/hiệu chỉnh số liệu khuôn trong `duc_shot_khuon`).
+- `duc_edit_incident` (port `editIncident_` — sửa sự cố ĐÃ ĐÓNG trong `duc_su_co_log`, giữ nguyên cách nối audit-stamp `[edited HH:mm dd/MM by user]` như bản gốc).
+- `duc_get_ipqc_due_by_id_dong()` (port gộp `getIpqcQueue_`+`enrichRowsWithIpqcStatus_` — trả sẵn map `id_dong → loại kiểm/phút đã trôi` CHỈ gồm checkpoint đã tới hạn thật, để trang tĩnh JOIN thẳng vào bảng Ca_hien_tai khi render, không cần dựng lại logic hàng đợi phía client).
+- **Đơn giản hoá có chủ đích, đã ghi rõ đầu file**: tính năng "Nạp KHSX hàng loạt" (`getWeeklyPlanSuggestions_`) phụ thuộc dữ liệu Sheet `KHSX_WEEKLY_PLAN_SHEET` CHƯA từng được import vào Supabase — TẠM KHÔNG có trong bản web tĩnh, trưởng ca gán kế hoạch thủ công từng máy (`duc_upsert_plan`)/từng cặp khuôn kép (`duc_assign_paired_plan`) như bình thường. Cần làm thêm script import riêng nếu muốn khôi phục sau này.
+- `getMachineList`/`getProductList`/`getPersonnelList`/`getShiftLeaderList`/`getCavityMap` (MasterData.js): **KHÔNG cần RPC** — dữ liệu tương đương đã có sẵn trong Supabase (`master_machines`/`master_products`/`master_employees`), trang tĩnh đọc thẳng qua `sb.from(...).select(...)`.
+- **Việc cần làm ngay**: user chạy `migration_phase4_step8_cahientai_rpc.sql` rồi `migration_phase4_step9_frontend_gaps.sql` trong Supabase SQL Editor (thứ tự không quan trọng, không phụ thuộc lẫn nhau). Sau đó AI bắt đầu viết `duc-dashboard.html` (trang chính thay `Index.html`) — theo đúng yêu cầu của user: làm trọn vẹn 1 lần, không chia nhỏ MVP.
+
 ---
 
 **Việc cần làm ngay tiếp theo (lịch sử, đã gộp vào checklist trên)**:
