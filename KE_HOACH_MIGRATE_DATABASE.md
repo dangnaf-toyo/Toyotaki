@@ -472,9 +472,15 @@ Checklist deploy dưới đây (mục cũ) coi như bước 1/3/4 đã xong; gi�
 - 2 phương án ca (`2 ca 12h`, `2 ca 8h`) hardcode thẳng trong `duc_get_shift_window`, khớp `CONFIG.SHIFT_PLANS` — nếu sau này công ty đổi giờ ca, phải sửa cả JS gốc (khi vẫn còn Apps Script) lẫn hàm SQL này cho khớp.
 - **CHƯA THỂ TEST** (chưa có UI) — chạy SQL trước để xác nhận không lỗi cú pháp.
 
+**✅ Bước con 6 (`Ncp.js` — quản lý xử lý SP không phù hợp) — CODE XONG, CHƯA TEST (2026-08-14)**:
+- `supabase/migration_phase4_step6_ncp.sql` (mới) — toàn bộ 11 hàm ghi + 1 hàm đọc tổng hợp: `duc_ncp_open_case`, `duc_ncp_record_sorting`, `duc_ncp_choose_sua`, `duc_ncp_record_repair`, `duc_ncp_request_scrap`, `duc_ncp_approve_scrap`, `duc_ncp_update_root_cause`, `duc_ncp_submit_root_cause_for_approval`, `duc_ncp_approve_root_cause`, `duc_ncp_reopen_root_cause`, cùng helper `duc_ncp_tinh_trang_thai` (tính trạng thái pool NG), `duc_ncp_so_quan_ly_moi` (ID `ddMMyyyy-NN`, đếm theo ngày — bảng `duc_ncp_id_counter`), `duc_ncp_append_log`, và `duc_get_available_ng_checkpoints_for_ncp` (đọc tổng hợp, public).
+- **Ảnh Nguyên nhân & Đối sách** (`uploadNcpRootCauseImage_`): không cần RPC riêng — trình duyệt tự upload thẳng lên Storage bucket `ipqc-evidence` (dùng chung), lấy URL, truyền vào `duc_ncp_update_root_cause`.
+- Đọc danh sách case (`getAllNcpCases_`)/`getNcpCaseById_`: không cần RPC — bảng `duc_ncp` đã có RLS đọc công khai sẵn từ `schema_duc.sql`, trang tĩnh sau này query thẳng qua `sb.from('duc_ncp').select(...)`.
+- **CHƯA THỂ TEST** (chưa có UI) — chạy SQL trước để xác nhận không lỗi cú pháp.
+
 **Việc cần làm ngay tiếp theo (khi quay lại với AI)**:
-1. **User**: chạy `migration_phase4_step5_resolve_incident.sql` trong Supabase SQL Editor.
-2. **AI**: tiếp tục bước con 6 (`Ncp.js`, 10 hàm khoá — quản lý xử lý SP không phù hợp) → bước con 7 (còn lại: `BaoCao.js`/`BaoCaoTuan.js`/`Diecast.js`/`saveTieuChuan_`) → **sau đó mới bắt đầu viết giao diện tĩnh thay `Index.html`/`Ipqc.html`/`QcManager.html`/`Mobile.html`** (khối lớn nhất, ~150 điểm gọi, nên làm riêng từng màn hình, có thể cần nhiều phiên làm việc).
+1. **User**: chạy `migration_phase4_step6_ncp.sql` trong Supabase SQL Editor.
+2. **AI**: bước con 7 (còn lại: `BaoCao.js`/`BaoCaoTuan.js`/`Diecast.js` các hàm ghi còn sót, `saveTieuChuan_`/`uploadTieuChuanPdf_` trong IpqcCheckpoint.js) → **sau đó mới bắt đầu viết giao diện tĩnh thay `Index.html`/`Ipqc.html`/`QcManager.html`/`Mobile.html`** (khối lớn nhất, ~150 điểm gọi, nên làm riêng từng màn hình, nhiều phiên làm việc).
 3. Nếu deploy/test phát hiện lỗi ở phần đã làm, báo lại để sửa trước khi làm tiếp, không nên chồng thêm việc mới lên nền chưa xác nhận đúng.
 
 ---
