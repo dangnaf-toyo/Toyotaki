@@ -8,7 +8,7 @@
 -- V:W) mà code.js gốc dùng (getMasterMaterials/checkMasterMaterial). Đúng
 -- tinh thần bỏ hẳn Google đã áp dụng cho master_products/master_machines/
 -- master_employees ở khối Đúc — nvl_materials được quản lý trực tiếp qua
--- RPC duc_nvl_upsert_material bên dưới (trang tĩnh có màn quản lý danh mục).
+-- RPC nvl_upsert_material bên dưới (trang tĩnh có màn quản lý danh mục).
 -- ============================================================================
 
 -- ── nvl_giao_dich.sheet_row: trước đây chỉ dùng làm khoá import (vị trí dòng
@@ -133,6 +133,8 @@ declare
   v_running numeric;
   v_row record;
   v_is_first boolean;
+  v_ngay date;
+  v_nhap numeric;
 begin
   if not exists (select 1 from nvl_materials where ma_nvl = p_ma_nvl) then
     return jsonb_build_object('ok', false, 'error', 'Mã NVL không hợp lệ: ' || p_ma_nvl);
