@@ -478,10 +478,21 @@ Checklist deploy dưới đây (mục cũ) coi như bước 1/3/4 đã xong; gi�
 - Đọc danh sách case (`getAllNcpCases_`)/`getNcpCaseById_`: không cần RPC — bảng `duc_ncp` đã có RLS đọc công khai sẵn từ `schema_duc.sql`, trang tĩnh sau này query thẳng qua `sb.from('duc_ncp').select(...)`.
 - **CHƯA THỂ TEST** (chưa có UI) — chạy SQL trước để xác nhận không lỗi cú pháp.
 
+**✅ Bước con 7 (`endShift_`/OEE, mold shots, carry-over, `saveTieuChuan_`) — CODE XONG, CHƯA TEST (2026-08-14)**:
+- `supabase/migration_phase4_step7_end_shift.sql` (mới, file LỚN NHẤT trong toàn bộ migrate) — port toàn bộ `endShift_` (BaoCao.js) sang RPC `duc_end_shift`, gồm: tính OEE từng dòng + toàn ca (Availability/Performance/Quality, xử lý overlap giờ nghỉ giải lao `duc_get_break_window`/`duc_sum_break_overlap`, downtime xuyên ca), ghi `duc_bao_cao_ca` + `duc_lich_su_san_xuat`, gọi `duc_update_mold_shots_from_shift` (port `updateMoldShotsFromShift_`, ShotKhuon.js — có xử lý khuôn kép), gọi `duc_carry_over_shift` (port khối carry-over), dọn `Ca_hien_tai`. Cũng thêm `duc_ipqc_save_tieu_chuan`/`duc_ipqc_set_tieu_chuan_pdf` (port `saveTieuChuan_`/`uploadTieuChuanPdf_`).
+- **CỐ Ý BỎ QUA**: phần tạo báo cáo Google Docs → PDF (`createShiftReportDoc`) — theo quyết định đã chốt với user, báo cáo kết ca sẽ đổi sang HTML/CSS + xuất PDF bằng trình duyệt, làm ở giai đoạn viết giao diện (không phải việc của RPC backend). RPC `duc_end_shift` trả về đủ dữ liệu thô (kể cả `oee_rows` chi tiết từng dòng) để trang tĩnh tự dựng báo cáo.
+- **QUAN TRỌNG — đây là phần phức tạp và rủi ro cao nhất trong toàn bộ migrate** (tính toán OEE — chỉ số KPI quản lý dùng, không phải chỉ CRUD có validate). User đã đồng ý tự rà soát kỹ file SQL trước khi chạy, không chỉ copy-dán như các file trước. Các điểm cần chú ý khi rà soát:
+  - `duc_get_break_window`: chỉ hỗ trợ ĐÚNG 1 khung nghỉ/ca (khớp cấu hình hiện tại `CONFIG.SHIFT_PLANS` — mỗi ca có đúng 1 `break_windows`). Nếu đổi cấu hình ca sau này phải sửa cả 2 nơi.
+  - `master_products.cycle_time_s`: giả định đã lưu đúng ĐƠN VỊ GIÂY (khớp `CONFIG.CT_UNIT = 'second'` đã xác nhận trong Config.js) — nếu import trước đây lỡ sai đơn vị, OEE sẽ sai theo.
+  - Nếu `duc_end_shift` được gọi 2 lần cho cùng 1 ca (vd do lỗi mạng, bấm lại) — đã thêm `on conflict` cho `duc_bao_cao_ca`/`duc_lich_su_san_xuat` để ghi đè an toàn (không tạo trùng), nhưng `duc_carry_over_shift` gọi 2 lần sẽ tự bỏ qua (do check `exists` trước khi insert) — an toàn.
+- **CHƯA THỂ TEST** (chưa có UI) — chạy SQL trước, rà soát kỹ.
+
+**🎉 TOÀN BỘ 7 BƯỚC CON CỦA VIỆC CHUYỂN BUSINESS LOGIC ĐÚC SANG RPC ĐÃ CODE XONG.** Từ đây, việc còn lại của Giai đoạn 4 (Đúc+IPQC+In tem) chỉ còn duy nhất 1 việc — nhưng là việc LỚN NHẤT: **viết giao diện tĩnh** thay `Index.html` (4143 dòng, 149 điểm `google.script.run`)/`Ipqc.html`/`QcManager.html`/`Mobile.html`/`NcpDetail.html`, gọi thẳng các RPC đã có sẵn. Nên làm riêng từng màn hình, nhiều phiên làm việc, có test từng phần trước khi ghép.
+
 **Việc cần làm ngay tiếp theo (khi quay lại với AI)**:
-1. **User**: chạy `migration_phase4_step6_ncp.sql` trong Supabase SQL Editor.
-2. **AI**: bước con 7 (còn lại: `BaoCao.js`/`BaoCaoTuan.js`/`Diecast.js` các hàm ghi còn sót, `saveTieuChuan_`/`uploadTieuChuanPdf_` trong IpqcCheckpoint.js) → **sau đó mới bắt đầu viết giao diện tĩnh thay `Index.html`/`Ipqc.html`/`QcManager.html`/`Mobile.html`** (khối lớn nhất, ~150 điểm gọi, nên làm riêng từng màn hình, nhiều phiên làm việc).
-3. Nếu deploy/test phát hiện lỗi ở phần đã làm, báo lại để sửa trước khi làm tiếp, không nên chồng thêm việc mới lên nền chưa xác nhận đúng.
+1. **User**: rà soát kỹ rồi chạy `migration_phase4_step7_end_shift.sql` trong Supabase SQL Editor.
+2. **User**: quyết định có muốn AI bắt đầu viết giao diện tĩnh cho Đúc ngay, hay dừng lại kiểm tra/nghỉ trước — đây là khối việc rất lớn, nên cân nhắc chia nhỏ theo từng màn hình (Index.html trưởng ca trước, rồi Ipqc.html, QcManager.html, Mobile.html/NcpDetail.html sau).
+3. Nếu deploy/test SQL phát hiện lỗi cú pháp hoặc logic (đặc biệt phần OEE), báo lại để sửa trước khi viết giao diện — sai ở tầng RPC sẽ khó phát hiện hơn nhiều khi đã có giao diện che phủ lên trên.
 
 ---
 
