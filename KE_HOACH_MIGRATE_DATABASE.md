@@ -574,6 +574,13 @@ Checklist deploy dưới đây (mục cũ) coi như bước 1/3/4 đã xong; gi�
 - `khsx-tuan.html` (mới) — trang cho bộ phận kế hoạch: chọn tuần (điều hướng tuần trước/sau/tuần này), bảng liệt kê + modal thêm/sửa dòng, xoá dòng. CRUD trực tiếp qua `supabase-js` (không cần RPC vì không có logic nghiệp vụ phức tạp).
 - `duc-dashboard.html` — khôi phục nút "⚡ Nạp kế hoạch từ KHSX tuần" + modal hàng loạt + gợi ý tự điền trong modal "Gán kế hoạch" (port `getWeeklyPlanSuggestions_`/`applyWeeklyPlanSuggestion_` sang JS client, đọc thẳng `duc_khsx_tuan_plan` theo tuần tương ứng `state.ngay`, tính 50/50 KH ngày → KH ca, phát hiện xung đột nếu 1 máy có >1 dòng KH khác 0 cùng ngày). Cập nhật lại comment đầu file (mục "đã chủ đích bỏ" bớt 1 mục, thêm mục 7 ghi rõ đã khôi phục).
 - **Việc cần làm tiếp theo**: user chạy `migration_phase4_step10_khsx_tuan.sql`, mở `khsx-tuan.html` nhập thử 1-2 dòng kế hoạch cho tuần hiện tại, rồi mở `duc-dashboard.html` bấm "⚡ Nạp kế hoạch từ KHSX tuần" xác nhận gợi ý đúng và lưu được.
+- **✅ Đã chạy xong `migration_phase4_step10_khsx_tuan.sql` (user xác nhận 2026-08-14).**
+
+**✅ `home-supabase.html` — trang chủ MỚI cho các công cụ Supabase (2026-08-14), đã commit+push (`69414e4`)**: theo yêu cầu user — 1 trang chủ độc lập với `index.html` (trang chủ cũ, chủ yếu trỏ Apps Script), CHỈ liệt kê các công cụ đã chuyển xong sang Supabase. Giữ đúng phong cách thương hiệu Toyotaki (font Zilla Slab/IBM Plex, tông màu cam/kem) như `index.html`. Có chỉ báo đăng nhập góc trên. **Tên file cố định — các lần deploy sau chỉ cần ghi đè đúng file này, KHÔNG đổi tên, để URL không đổi.**
+- **URL cố định (GitHub Pages)**: `https://dangnaf-toyo.github.io/Toyotaki/home-supabase.html`
+- Danh sách liên kết hiện có: `sanluong-supabase.html`, `chatluong-supabase.html`, `duc-dashboard.html`, `chuyencongdoan.html`, `khsx-tuan.html`, `shared/login.html`. Có link phụ quay lại `index.html` (trang chủ cũ) cho các công cụ chưa migrate (In tem, IPQC, QC manager, Tồn kho NVL).
+- **Lưu ý cho các phiên sau**: mỗi khi thêm 1 trang Supabase mới hoàn thành (vd. `ipqc-dashboard.html`, `qc-manager.html`, NVL...), phải nhớ THÊM card tương ứng vào `home-supabase.html` — không tự động, phải chủ động cập nhật file này mỗi lần một module mới hoàn tất.
+- **2 file "bản thử nghiệm" cũ đã KHÔNG đưa vào trang chủ mới** (để tránh nhầm lẫn với bản chính thức): `chuyencongdoan-supabase.html` (bị thay bằng `chuyencongdoan.html` hoàn chỉnh hơn) và `duc-supabase.html` (bị thay bằng `duc-dashboard.html` đầy đủ). Hai file pilot này vẫn còn tồn tại trong repo (không xoá, phòng khi cần đối chiếu) nhưng không nên dùng nữa — có thể dọn/xoá sau khi user xác nhận không cần.
 
 ---
 
