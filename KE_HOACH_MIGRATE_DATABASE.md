@@ -466,9 +466,15 @@ Checklist deploy dưới đây (mục cũ) coi như bước 1/3/4 đã xong; gi�
 - **Đơn giản hoá có chủ đích**: `duc_report_mold_issue` khi gọi từ chuỗi IPQC submit dùng thẳng `ngay`/`ca` của dòng `Ca_hien_tai` liên quan, thay vì tự "đoán" ca hiện tại theo giờ đồng hồ như bản cũ (`detectCurrentShift()`) — chính xác hơn về ngữ cảnh nghiệp vụ.
 - **CHƯA THỂ TEST** vì chưa có giao diện (frontend Đúc) gọi tới các RPC này — cần bạn chạy file SQL trước (để không có lỗi cú pháp) nhưng việc test đầy đủ luồng phải chờ tới khi có trang tĩnh.
 
+**✅ Bước con 5 (`resolveIncident_`, chia đoạn qua nhiều ca) — CODE XONG, CHƯA TEST (2026-08-14)**:
+- `supabase/migration_phase4_step5_resolve_incident.sql` (mới) — viết lại toàn bộ `resolveIncident_` + `splitIncidentByShift_` (Utils.js: `getShiftWindow`/`getPrevShift`) thành SQL: `duc_shift_short_id`, `duc_make_id_dong`, `duc_iso_week`, `duc_get_shift_window`, `duc_get_prev_shift`, `duc_split_incident_by_shift` (table function trả về từng đoạn), `duc_resolve_incident` (RPC chính).
+- **Đã sửa 1 lỗi phát hiện khi viết bước này**: hàm `duc_close_f1_incident_if_open` viết ở bước con 4 dùng sai định dạng tuần (`"W"WW_YYYY` — tuần theo lịch, không phải tuần ISO như `getISOWeek()` bản gốc) — đã `create or replace` lại trong file này dùng đúng `duc_iso_week`.
+- 2 phương án ca (`2 ca 12h`, `2 ca 8h`) hardcode thẳng trong `duc_get_shift_window`, khớp `CONFIG.SHIFT_PLANS` — nếu sau này công ty đổi giờ ca, phải sửa cả JS gốc (khi vẫn còn Apps Script) lẫn hàm SQL này cho khớp.
+- **CHƯA THỂ TEST** (chưa có UI) — chạy SQL trước để xác nhận không lỗi cú pháp.
+
 **Việc cần làm ngay tiếp theo (khi quay lại với AI)**:
-1. **User**: chạy `migration_phase4_step4_ipqc_checkpoint.sql` trong Supabase SQL Editor — ít nhất để xác nhận không lỗi cú pháp (test chức năng thật sẽ chờ có UI).
-2. **AI**: tiếp tục bước con 5 (`resolveIncident_` RPC — phức tạp nhất còn lại, có logic chia đoạn sự cố qua nhiều ca `splitIncidentByShift_`, cần viết lại tính toán khung giờ ca trong SQL) → bước con 6 (`Ncp.js`, 10 hàm) → bước con 7 (còn lại: BaoCao.js/BaoCaoTuan.js/Diecast.js/saveTieuChuan_) → **sau đó mới bắt đầu viết giao diện tĩnh thay `Index.html`/`Ipqc.html`/`QcManager.html`/`Mobile.html`** (khối lớn nhất, ~150 điểm gọi, nên làm riêng từng màn hình, có thể cần nhiều phiên làm việc).
+1. **User**: chạy `migration_phase4_step5_resolve_incident.sql` trong Supabase SQL Editor.
+2. **AI**: tiếp tục bước con 6 (`Ncp.js`, 10 hàm khoá — quản lý xử lý SP không phù hợp) → bước con 7 (còn lại: `BaoCao.js`/`BaoCaoTuan.js`/`Diecast.js`/`saveTieuChuan_`) → **sau đó mới bắt đầu viết giao diện tĩnh thay `Index.html`/`Ipqc.html`/`QcManager.html`/`Mobile.html`** (khối lớn nhất, ~150 điểm gọi, nên làm riêng từng màn hình, có thể cần nhiều phiên làm việc).
 3. Nếu deploy/test phát hiện lỗi ở phần đã làm, báo lại để sửa trước khi làm tiếp, không nên chồng thêm việc mới lên nền chưa xác nhận đúng.
 
 ---
