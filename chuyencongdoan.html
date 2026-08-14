@@ -62,6 +62,15 @@ input:focus,select:focus{outline:none;border-color:#C87941;
 .err{background:#fff0f0;color:#c00;border:1px solid #fcc;display:block!important}
 .ok{background:#f0fff4;color:#1a7a3a;border:1px solid #c3e6cb;display:block!important}
 .wait{background:#fff8f0;color:#C87941;border:1px solid #f5e6d7;display:block!important}
+.tabs-wrap{display:flex;gap:8px;width:100%;max-width:480px;margin-bottom:14px}
+.tab-btn{flex:1;padding:10px;border:1.5px solid #ddd;border-radius:10px;background:#fff;
+  color:#555;font-size:12.5px;font-weight:700;cursor:pointer}
+.tab-btn.active{background:#C87941;border-color:#C87941;color:#fff}
+.pending-item{border:1px solid #eee;border-radius:10px;padding:10px 12px;margin-bottom:10px}
+.pending-item .sr{padding:3px 0}
+.confirm-btn{width:100%;margin-top:8px;padding:9px;border:none;border-radius:8px;
+  background:#1a7a3a;color:#fff;font-size:13px;font-weight:700;cursor:pointer}
+.confirm-btn:disabled{opacity:.5;cursor:not-allowed}
 </style>
 </head>
 <body>
@@ -73,6 +82,12 @@ input:focus,select:focus{outline:none;border-color:#C87941;
   <div class="auth-info" id="authInfo">…</div>
 </div>
 
+<div class="tabs-wrap">
+  <button type="button" class="tab-btn active" id="tabBtnScan">📷 Quét QR chuyển hàng</button>
+  <button type="button" class="tab-btn" id="tabBtnConfirm">✅ Xác nhận nhận hàng</button>
+</div>
+
+<div id="tabScan">
 <div class="card">
   <div class="card-ttl">📷 Bước 1 — Quét mã QR trên tem</div>
   <button class="scan-btn" id="btnScan">📷&nbsp; Mở Camera Quét QR</button>
@@ -128,6 +143,25 @@ input:focus,select:focus{outline:none;border-color:#C87941;
   </div>
 
   <button class="submit-btn" id="btnSubmit" disabled>🔀&nbsp; Chuyển Công Đoạn</button>
+</div>
+</div>
+
+<div id="tabConfirm" style="display:none;">
+  <div class="card">
+    <div class="card-ttl">✅ Xác nhận đã nhận hàng — chọn bộ phận của bạn</div>
+    <div class="fg">
+      <label class="req" for="confirmCongDoan">Bộ phận (Công đoạn giao — nơi bạn xác nhận thay mặt)</label>
+      <select id="confirmCongDoan"></select>
+    </div>
+    <div class="fg">
+      <label class="req" for="confirmNguoiXacNhan">Người xác nhận</label>
+      <select id="confirmNguoiXacNhan"></select>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-ttl">📋 Phiếu đang chờ xác nhận</div>
+    <div id="confirmList" style="font-size:13px;color:#999;">Chọn bộ phận ở trên để xem danh sách.</div>
+  </div>
 </div>
 
 <div id="msg"></div>
@@ -414,8 +448,77 @@ async function initAuthStatus(){
 }
 
 /* ---------- Khởi tạo ---------- */
+/* ---------- Tab: Xác nhận nhận hàng ---------- */
+document.getElementById("tabBtnScan").addEventListener("click", () => switchTab("scan"));
+document.getElementById("tabBtnConfirm").addEventListener("click", () => switchTab("confirm"));
+function switchTab(tab){
+  document.getElementById("tabScan").style.display = tab === "scan" ? "" : "none";
+  document.getElementById("tabConfirm").style.display = tab === "confirm" ? "" : "none";
+  document.getElementById("tabBtnScan").classList.toggle("active", tab === "scan");
+  document.getElementById("tabBtnConfirm").classList.toggle("active", tab === "confirm");
+  if (tab === "confirm") stopCamera();
+}
+
+async function loadConfirmDanhMuc(){
+  fillSelect("confirmCongDoan", CONG_DOAN_LIST, "-- Chọn bộ phận --");
+  const { data, error } = await sb.from('master_employees').select('ten_nhan_vien').order('ten_nhan_vien');
+  if (!error) fillSelect("confirmNguoiXacNhan", (data || []).map(r => r.ten_nhan_vien), "-- Chọn tên bạn --");
+}
+
+document.getElementById("confirmCongDoan").addEventListener("change", loadPendingList);
+
+async function loadPendingList(){
+  const dept = document.getElementById("confirmCongDoan").value;
+  const listEl = document.getElementById("confirmList");
+  if (!dept){ listEl.innerHTML = 'Chọn bộ phận ở trên để xem danh sách.'; return; }
+  listEl.textContent = 'Đang tải…';
+  const { data, error } = await sb.from('cd_chuyen_cong_doan_log')
+    .select('id_phieu,tag_no,ma_sp,ten_sp,sl_thuc_chuyen,cong_doan_nhan,nguoi_nhan,thoi_gian_chuyen')
+    .eq('cong_doan_giao', dept)
+    .eq('trang_thai_xac_nhan', 'Chờ công đoạn trước xác nhận')
+    .order('thoi_gian_chuyen', { ascending: false });
+  if (error){ listEl.innerHTML = '❌ Lỗi tải danh sách: ' + error.message; return; }
+  if (!data || !data.length){ listEl.innerHTML = 'Không có phiếu nào đang chờ xác nhận cho bộ phận này.'; return; }
+  listEl.innerHTML = '';
+  data.forEach(r => {
+    const div = document.createElement('div');
+    div.className = 'pending-item';
+    const t = new Date(r.thoi_gian_chuyen).toLocaleString('vi-VN');
+    div.innerHTML = `
+      <div class="sr"><div class="k">Tag No</div><div class="v">${r.tag_no}</div></div>
+      <div class="sr"><div class="k">SP</div><div class="v">${r.ma_sp} — ${r.ten_sp || ''}</div></div>
+      <div class="sr"><div class="k">SL chuyển</div><div class="v">${r.sl_thuc_chuyen}</div></div>
+      <div class="sr"><div class="k">Sang</div><div class="v">${r.cong_doan_nhan} (${r.nguoi_nhan})</div></div>
+      <div class="sr"><div class="k">Lúc</div><div class="v">${t}</div></div>
+      <button type="button" class="confirm-btn">✅ Xác nhận đã giao</button>`;
+    div.querySelector('.confirm-btn').addEventListener('click', (e) => confirmOne(r.id_phieu, e.target));
+    listEl.appendChild(div);
+  });
+}
+
+async function confirmOne(idPhieu, btn){
+  const nguoiXacNhan = document.getElementById("confirmNguoiXacNhan").value;
+  if (!nguoiXacNhan){ err("Chưa chọn Người xác nhận."); return; }
+  const session = await MesAuth.getSession();
+  if (!session){
+    err("Cần đăng nhập trước khi xác nhận. Đang chuyển sang trang đăng nhập…");
+    setTimeout(() => { window.location.href = 'shared/login.html?returnTo=' + encodeURIComponent(window.location.href); }, 1200);
+    return;
+  }
+  btn.disabled = true;
+  btn.textContent = "⏳ Đang xử lý...";
+  const thoiGianXacNhan = new Date().toLocaleString('vi-VN');
+  const { error } = await sb.rpc('cd_xac_nhan_chuyen', {
+    p_id_phieu: idPhieu, p_nguoi_giao: nguoiXacNhan, p_ngay_gio_xac_nhan: thoiGianXacNhan
+  });
+  if (error){ err("Lỗi xác nhận: " + error.message); btn.disabled = false; btn.textContent = "✅ Xác nhận đã giao"; return; }
+  showMsg("✅ Đã xác nhận phiếu " + idPhieu, "ok", 4000);
+  loadPendingList();
+}
+
 initAuthStatus();
 loadDanhMuc();
+loadConfirmDanhMuc();
 </script>
 </body>
 </html>
