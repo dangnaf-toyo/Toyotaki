@@ -314,9 +314,191 @@ Hiện 3 hệ thống chia sẻ file KHSX Master nhưng **không** liên kết d
   - Chuyển công đoạn (`cd_chuyen_cong_doan_log`): 10 dòng.
   - Đúc+IPQC+In tem (`duc_*`, 12 bảng): có dữ liệu ở hầu hết bảng (`duc_tem` 602 dòng, `duc_ipqc_checkpoint` 323 dòng, `duc_su_co_log` 285 dòng...), **riêng 2 bảng đang 0 dòng: `duc_tangca_log` và `duc_ipqc_tieuchuan`** — cần xác nhận là hợp lý (chưa có log tăng ca / chưa cấu hình checklist IPQC theo mã SP nào) hay import bị sót, việc này chưa kiểm tra.
 
-**Việc cần làm tiếp theo (thứ tự):**
+- **2026-08-13** — Đã push xong cả 4 trang pilot trong repo `Toyotaki` (`sanluong-supabase.html`, `chatluong-supabase.html`, `chuyencongdoan-supabase.html`, `duc-supabase.html`, restyle theo đúng UI Đúc thật) và trang `index-supabase.html` trong repo `Ton-kho-NVL` lên GitHub (đều "up to date with origin/main") — mục "push 5 trang pilot" coi như **xong**, có link công khai chạy song song với bản gốc.
+
+- **2026-08-13** — Người dùng xác nhận yêu cầu: **cutover thật** (không chỉ đọc thử) — chuyển hẳn cả 5 module sang dùng Supabase làm database chính, **giữ nguyên 100% chức năng/giao diện/logic nghiệp vụ** (không viết lại business logic, chỉ đổi nơi lưu trữ bên dưới). Đã khảo sát kỹ (3 agent) toàn bộ đường **ghi** dữ liệu hiện tại (trước đó tài liệu này mới khảo sát đường đọc) — xem mục 11 để có bản đồ đầy đủ hàm ghi/khoá/chuỗi xuyên bảng của từng module. Đã lập kế hoạch cutover chi tiết theo 6 phase (0-5), user chọn: có sẵn `clasp` để push/deploy trực tiếp, làm tuần tự theo đúng thứ tự ưu tiên cũ, mỗi module chạy song song đối chiếu trước khi làm module tiếp theo. Kế hoạch đầy đủ + tiến độ từng phase: xem **mục 11** bên dưới (mục đó là nguồn tiến độ chính từ nay cho việc cutover ghi; mục 10 này giữ lại làm lịch sử giai đoạn khảo sát/đọc-thử).
+
+**Việc còn treo, độc lập với migrate (chưa làm, không chặn cutover):**
 1. Xác nhận 2 bảng 0 dòng (`duc_tangca_log`, `duc_ipqc_tieuchuan`) là hợp lý hay cần chạy lại import.
-2. Mở 5 trang pilot (`sanluong-supabase.html`, `chatluong-supabase.html`, `index-supabase.html`, `chuyencongdoan-supabase.html`, `duc-supabase.html`), đối chiếu số liệu với bản gốc.
-3. Push các trang pilot lên repo GitHub tương ứng (`Toyotaki` cho 4 trang trong repo này, `Ton-kho-NVL` cho `index-supabase.html`) để có link công khai chạy song song — **các trang gốc giữ nguyên, không đổi**.
-4. Sau khi đối chiếu ổn định (khuyến nghị 1 tuần/module), mới cân nhắc đổi link chính thức trên `index.html` trang chủ trỏ sang bản Supabase, và tắt dần nguồn CSV/GAS cũ.
-5. Kiểm tra/sửa giao dịch lỗi 1050 "tấn" của `ADC12-DAK` trong Sheet NVL gốc (không phụ thuộc migrate).
+2. Đối chiếu số liệu đọc giữa các trang pilot và bản gốc (vẫn nên làm song song trong lúc cutover ghi ở mục 11).
+3. Kiểm tra/sửa giao dịch lỗi 1050 "tấn" của `ADC12-DAK` trong Sheet NVL gốc (không phụ thuộc migrate).
+
+---
+
+## 11. Kế hoạch & tiến độ CUTOVER GHI DỮ LIỆU sang Supabase (nguồn tiến độ chính — cập nhật mỗi khi làm xong 1 việc)
+
+> Mục này là bản sao có cập nhật liên tục của kế hoạch đã được duyệt (lưu tại `C:\Users\DELL\.claude\plans\indexed-hugging-candle.md` trên máy người thực hiện). Đọc mục này để biết **đang làm tới đâu** và **làm tiếp gì** — không cần đọc lại toàn bộ hội thoại cũ.
+
+### 11.0. Lưu ý quan trọng đã rút ra khi test thật (đọc trước khi cấu hình key)
+
+**Phải dùng key `service_role` kiểu CŨ (JWT, chuỗi dài bắt đầu bằng `eyJ...`), KHÔNG dùng key kiểu mới `sb_secret_...`.** Key `sb_secret_...` (hệ thống key mới của Supabase) bị chặn khi gọi qua HTTP thô từ Apps Script (`UrlFetchApp`), báo lỗi `401 Forbidden use of secret API key in browser` — không phải do dán sai chỗ hay do User-Agent, mà do key kiểu mới hiện chỉ hoạt động qua thư viện chính thức của Supabase, không hoạt động qua lệnh gọi REST trực tiếp kiểu Apps Script/Node đang dùng trong toàn bộ dự án này. Lấy key đúng: Supabase Dashboard → Settings → API → tìm mục **"Legacy API keys"** → key `service_role` (JWT). Đây cũng là key mà các script `import-*.mjs` trước đó đã dùng thành công.
+
+**`clasp run` để tự set Script Properties không hoạt động được** (báo "Unable to run script function... permission") — cần bật 1 cài đặt tài khoản Google (Apps Script API) mà không thao tác qua CLI được. Giải pháp thực tế: cài đặt `SUPABASE_SERVICE_ROLE_KEY` bằng tay qua Apps Script Editor → ⚙️ Project Settings → Script Properties (4 bước, không cần biết code) — đã làm cách này cho Dashboard Đúc + Intem QR.
+
+**`.claspignore` có sẵn trong project Dashboard Đúc là danh sách CHO PHÉP (deny-all + allowlist từng file)** — file mới tạo (`Supabase.js`) bị bỏ sót khi push cho đến khi thêm dòng `!Supabase.js` vào `.claspignore`. Cần nhớ việc này khi tạo file `.js` mới trong project đã có `.claspignore` kiểu allowlist.
+
+**@HEAD deployment vs deployment production**: mỗi project Apps Script luôn có sẵn 1 deployment `@HEAD` tự động (theo dõi code mới nhất) — đây thường KHÔNG phải link production thật (link "Anyone" mà người dùng bookmark thường là 1 deployment có phiên bản cố định, tạo qua "Manage deployments"). `clasp push` cập nhật `@HEAD` ngay lập tức nhưng KHÔNG đụng tới deployment production đã có phiên bản cố định — an toàn để push code mới mà không sợ ảnh hưởng người dùng thật, miễn là không chủ động sửa deployment production. Muốn có link riêng để test, dùng `clasp deploy --description "..."` — tạo deployment MỚI, độc lập, không đụng bản cũ.
+
+### 11.1. Kiến trúc đã chốt
+
+- **Đọc**: dashboard fetch thẳng Supabase REST (`/rest/v1/<table>`, anon key, RLS chỉ cho `select`) — pattern đã có sẵn ở các trang `*-supabase.html`.
+- **Ghi**: Apps Script **giữ nguyên vai trò thực thi business logic** (validate, rẽ nhánh, sinh ID...) — chỉ thay lệnh `SpreadsheetApp...appendRow/setValue` bằng `fetch` tới Supabase REST, dùng **service_role key lưu trong Script Properties** (không hardcode, không commit).
+- **Chuỗi ghi xuyên nhiều bảng** (vd `resolveIncident_`, `submitIpqcCheck_`, `changeProduct_`): viết thành **1 hàm Postgres `plpgsql` (`SECURITY DEFINER`)**, thực hiện trong 1 transaction thật, Apps Script gọi qua `/rest/v1/rpc/<ten_ham>` — giữ nguyên hành vi, loại bỏ rủi ro ghi nửa-vời.
+- **Sinh ID tuần tự** (`id_dong`, `TagNo`, `id_phieu`...): thay "quét cột tìm max + Lock" bằng hàm Postgres dùng `sequence`, gọi qua RPC.
+- **LockService**: giữ nguyên trong Apps Script làm lớp bảo vệ bổ sung — an toàn thật sự giờ đến từ Postgres transaction/sequence.
+- **Sheet gốc**: giữ ở chế độ đọc, làm bản đối chiếu/lưu trữ 1-2 tuần sau mỗi module cutover, không tắt ngay.
+- **Ảnh IPQC/PDF tiêu chuẩn**: giữ nguyên trên Google Drive, chỉ đổi nơi lưu URL từ Sheet sang cột Postgres.
+
+### 11.2. Bản đồ đường ghi hiện tại (đã khảo sát 2026-08-13, dùng làm checklist khi sửa)
+
+**Sản lượng/Chất lượng** — ghi duy nhất 1 thứ: comment, qua `doPost(e)` của 1 Apps Script Web App riêng (2 deployment: `AKfycbz-vAFxrBA1...` cho sanluong, `AKfycbwQ9w-w2...` cho chatluong) — tìm dòng theo cột A trong sheet `Comments`, `setValue`/`appendRow`. Vị trí source thật **chưa xác định** (repo này chỉ có bản copy tay `sanluong.js`/`chatluong.js`, không phải clasp project).
+
+**Chuyển công đoạn** (`D:\Project\MES\Chuyển công đoạn`): `WA_ChuyenCongDoan` (`ChuyenCongDoan.gs:256`) append `ChuyenCongDoan` sheet, gọi `_upsertViTriHienTai` (:182, vòng lặp quét cột A) và `_genTransferId` (:231, quét max), có `LockService`. Có route `doPost(e)` ngoài domain (trang quét mobile) gọi cùng hàm. `XacNhanChuyenCongDoan.gs` (`ChuyenCongDoan()` :88-142) — 3 `setValue` xác nhận, dưới cùng lock.
+
+**Đúc + IPQC + In tem** (`D:\Project\MES\Dashboard Đúc` + `D:\Project\MES\Intem QR`) — khối phức tạp nhất:
+- `CaHienTai.js`: `upsertPlan_`(:122), `assignPairedPlan_`(:242), `setIncidentOpen_`(:337), `clearIncidentOpen_`(:420), `changeProduct_`(:516), `changeProductPaired_`(:662), `extendMachineShift_`(:1080)... đều ghi `Ca_hien_tai`.
+- `BanGhiSuCo.js`: `resolveIncident_`(:58, chuỗi: append `BanGhi_SuCo` → clear `Ca_hien_tai` → gọi `requestIpqcCheck_`), `editIncident_`(:248).
+- `IpqcCheckpoint.js`: `requestIpqcCheck_`(:94, append `IPQC_Checkpoint`), `submitIpqcCheck_`(:365, chuỗi: update `IPQC_Checkpoint` → rẽ nhánh NG mở incident F1 trên `Ca_hien_tai` + `reportMoldIssue_`; CẢNH BÁO chỉ `reportMoldIssue_`; OK đóng F1), `_uploadIpqcEvidence_`(:318, Drive), `saveTieuChuan_`/`uploadTieuChuanPdf_`(:670/711).
+- `VanDeKhuon.js`: `reportMoldIssue_`(:93), `resolveMoldIssuePending_`(:139), `confirmMoldIssueOutcome_`(:173).
+- `Ncp.js`: 10 hàm ghi có lock, sheet `SP_Khong_Phu_Hop`.
+- `ShotKhuon.js`, `Diecast.js`, `BaoCao.js`/`BaoCaoTuan.js`: ghi đơn giản hơn.
+- `Intem QR/Code.gs`: `WA_InTem`(:92) → `_genTagNo` (lock, quét max) → `_ghiDUC`(:280, append sheet `DUC` — **cùng file Diecast mà Đúc dùng chung**).
+- 33 chỗ `LockService.getScriptLock()` tổng cộng trong khối này. `Index.html` 4143 dòng, 149 điểm `google.script.run`.
+
+**Tồn kho NVL** (`D:\Project\MES\Quản lý NVL\code.js`, 1020 dòng): `addTransaction`(:231), `createTem`(:434, chuỗi phức tạp nhất — tạo tem + tự ghi giao dịch IN + cập nhật tồn), `updateStockForMaterial`(:983), `processMultiTransaction`(:724, quét giỏ QR hàng loạt), `updateOpening`/`updateStock`/`updateSettings`/`updatePlanNhap`/`recalcAllPlanStock` — **phụ thuộc vị trí dòng** theo mảng cứng `MATERIALS` (:34-37, 7 mã) cho 4 sheet (`Tồn Đầu Kỳ`, `Kế Hoạch`, `Cài Đặt`, `Tồn Hiện Tại`). **Không có `LockService` ở đâu cả** — rủi ro race có sẵn, độc lập với migrate.
+
+### 11.3. Trạng thái clasp (đầu vào bắt buộc để deploy)
+
+| Project | `.clasp.json` | Trạng thái |
+|---|---|---|
+| Dashboard Đúc | có (`scriptId` đã biết) | sẵn sàng |
+| Intem QR | có (`scriptId` đã biết) | sẵn sàng |
+| Chuyển công đoạn | **chưa có** | cần user lấy `scriptId` từ Apps Script Editor → `clasp clone` |
+| Quản lý NVL (`code.js`) | **chưa có** | cần user lấy `scriptId` → `clasp clone` |
+| Comment-backend sanluong/chatluong | **chưa xác định được project** | cần user tìm 2 project (deployment `AKfycbz-vAFxrBA1...`, `AKfycbwQ9w-w2...`) → lấy `scriptId` → `clasp clone` |
+
+### 11.4. Tiến độ theo phase (cập nhật mỗi khi làm xong 1 việc — thêm dòng mới, không xoá dòng cũ)
+
+**Phase 0 — Chuẩn bị**
+- [ ] 0.1 Lấy `scriptId` + `clasp clone` cho: comment-backend sanluong/chatluong, Chuyển công đoạn, Quản lý NVL. **⏳ ĐANG CHỜ USER** — user đang tự mở Apps Script Editor để lấy (2026-08-13). Đây là việc chặn **deploy** (không chặn việc sửa code local) cho 3 project này — Dashboard Đúc/Intem QR đã có clasp sẵn nên Phase 4 không bị chặn.
+- [ ] 0.2 Set `service_role` key vào Script Properties của từng project (sau khi có clasp) — code đã viết sẵn để đọc key qua `PropertiesService.getScriptProperties().getProperty("SUPABASE_SERVICE_ROLE_KEY")`, chỉ cần điền giá trị thật trong Apps Script Editor.
+- [~] 0.3 Bổ sung sequence + hàm RPC vào schema Supabase — làm **theo từng phase** (không làm 1 lần cho cả 5 module) để giữ đúng tinh thần cutover tuần tự. Đã xong phần của Chuyển công đoạn (xem Phase 3 bên dưới); Sản lượng/Chất lượng/Đúc/NVL sẽ làm khi tới lượt.
+
+**Phase 1 — Sản lượng**: chưa bắt đầu (chặn deploy bởi 0.1 — chưa xác định được project comment-backend).
+
+**Phase 2 — Chất lượng**: chưa bắt đầu (chặn bởi 0.1, và bởi Phase 1 xong trước theo thứ tự ưu tiên).
+
+**Phase 3 — Chuyển công đoạn**: **code đã sửa xong ở local, chưa deploy** (2026-08-13):
+  - `supabase/migration_phase3_chuyencongdoan.sql` (mới, trong repo `Dashboard_SL_CL`) — bảng đếm `cd_transfer_id_counter`, hàm `cd_next_transfer_id()`, `cd_ghi_chuyen_cong_doan(...)` (gói sinh ID + insert log trong 1 transaction), `cd_xac_nhan_chuyen(...)` (thay 3 setValue xác nhận). **Chưa chạy trên Supabase** — cần chạy trong SQL Editor trước khi deploy code Apps Script mới.
+  - `D:\Project\MES\Chuyển công đoạn\ChuyenCongDoan.gs` — đã thêm helper `_sbRpc_`/`_sbSelect_` (gọi Supabase REST bằng service_role key từ Script Properties); `WA_ChuyenCongDoan` đổi sang gọi RPC `cd_ghi_chuyen_cong_doan` thay `appendRow`; `WA_LayViTriHienTai` đổi sang đọc VIEW `cd_v_vi_tri_hien_tai` qua REST thay vì sheet `ViTriHienTai`; đã xoá hẳn `_upsertViTriHienTai`, `_ensureViTriSheet`, `_ensureTransferSheet`, `_genTransferId` (không còn dùng). Validate nghiệp vụ giữ nguyên 100%.
+  - `D:\Project\MES\Chuyển công đoạn\XacNhanChuyenCongDoan.gs` — đổi từ đọc/ghi trực tiếp sheet `ChuyenCongDoan` sang: `_sbSelect_` tra cứu hàng loạt theo `id_phieu=in.(...)`, rồi gọi RPC `cd_xac_nhan_chuyen` cho từng phiếu hợp lệ. Logic quyết định (khớp bộ phận, trạng thái chờ, danh sách bỏ qua) giữ nguyên y hệt bản cũ.
+  - **Còn thiếu để deploy được**: `scriptId` của project Chuyển công đoạn (chưa có `.clasp.json`) + set `SUPABASE_SERVICE_ROLE_KEY` vào Script Properties của **cả 2 project** (Web App chính + script gắn vào sheet "Theo dõi chuyển công đoạn" — đây là 2 project Apps Script riêng biệt, phải set key ở cả 2).
+  - `doGet`/`doPost` (route ngoài domain cho trang quét mobile) không cần sửa gì thêm — đã tự động dùng lại `WA_ChuyenCongDoan`/`WA_LayViTriHienTai` đã sửa.
+
+**Phase 4 — Đúc + IPQC + In tem** (7 bước con, xem chi tiết trong plan file) — **không bị chặn bởi 0.1** (đã có clasp sẵn cho cả Dashboard Đúc và Intem QR), đang làm trong lúc chờ scriptId của các phase khác.
+
+**Bước con 1/7 ("bảng đơn giản, không có chuỗi xuyên bảng trước") — CODE XONG, CHƯA DEPLOY (2026-08-13)**:
+  - `D:\Project\MES\Dashboard Đúc\Supabase.js` (**mới**) — helper dùng chung cho cả project: `sbSelect`/`sbInsert`/`sbUpsert`/`sbUpdate`/`sbRpc`, đọc `SUPABASE_SERVICE_ROLE_KEY` từ Script Properties. Mọi file khác trong dự án này tái dùng file này thay vì tự viết fetch riêng.
+  - `ShotMay.js` — xong, đổi `getLastMachineShot_`/`setLastMachineShot_` sang `sbSelect`/`sbUpsert` bảng `duc_shot_may`. Logic carry-over giữ nguyên 100%.
+  - `VanDeKhuon.js` — xong, `reportMoldIssue_`/`resolveMoldIssuePending_`/`confirmMoldIssueOutcome_`/`readOpenMoldIssuesByMold_`/`getAllMoldIssuesFull_` đổi sang `duc_van_de_khuon` qua Supabase, giữ nguyên `LockService`, `CacheService` (cache 60s không đổi), state machine trạng thái/đếm tái phát y hệt bản Sheet cũ.
+  - `ShotKhuon.js` — xong, `readAllMolds`/`updateMoldShotsFromShift_` (kể cả logic khuôn kép `pairSkipIds` — giữ nguyên y hệt)/`recordMoldMaintenance_`/`configureMold_`/`ensureMoldProductMapping_`/`cleanupMoldProductNames_` đổi sang `duc_shot_khuon` qua Supabase. `_computeMoldStatus` (JS thuần, không đụng Sheet/DB) giữ nguyên không đổi.
+  - `CaHienTai.js` hàm `extendMachineShift_` — **chỉ phần ghi `TangCa_Log` đổi sang Supabase** (`sbInsert('duc_tangca_log', ...)`). Phần ghi 4 cột `sp_end_time`/`version`/`last_updated_by`/`last_updated_at` vào `Ca_hien_tai` **CỐ Ý giữ nguyên trên Sheet** — bảng `Ca_hien_tai` sẽ migrate trọn khối ở bước con 3 (`changeProduct_`), đổi dở dang bây giờ sẽ làm dashboard đọc từ Sheet thấy dữ liệu cũ trong khi Supabase có dữ liệu mới → lệch hiển thị. `TangCa_Log` an toàn tách riêng vì chỉ ghi (audit log), không có hàm nào trong codebase đọc lại từ Sheet.
+  - **Chưa deploy** — cần: (1) set `SUPABASE_SERVICE_ROLE_KEY` vào Script Properties của project Dashboard Đúc (Project Settings trong Apps Script Editor), (2) `clasp push`, (3) test thật: bảo dưỡng khuôn, báo vấn đề khuôn, kết ca (trigger `updateMoldShotsFromShift_`), tăng ca máy đơn lẻ — đối chiếu dữ liệu xuất hiện đúng trong Supabase.
+**Bước con 3/7 (khối Ca_hien_tai — CaHienTai.js + Diecast.js + IpqcCheckpoint.js + BanGhiSuCo.js + Ncp.js + BaoCao.js) — CODE XONG, CHƯA DEPLOY (2026-08-14)**:
+  - Khảo sát trước khi code phát hiện phạm vi thật rộng hơn dự kiến ban đầu — không chỉ 13 hàm trong `CaHienTai.js` mà còn 6 file khác đọc/ghi trực tiếp bảng này (`Diecast.js` trigger mỗi phút, `IpqcCheckpoint.js` 5 hàm, `BanGhiSuCo.js`, `Ncp.js`, `BaoCao.js` khối carry-over kết ca) — tất cả đã chuyển đồng bộ trong 1 lượt để tránh dashboard đọc lẫn lộn Sheet cũ/Supabase mới.
+  - **Phát hiện quan trọng khi khảo sát**: `_getActiveIdDongSet_()` (IpqcCheckpoint.js) dựa vào **thứ tự chèn dòng trong Sheet** (rowIndex) để biết dòng SP nào đang active trên 1 máy (vì `changeProduct_` giữ nguyên dòng SP cũ, không xoá) — Supabase không có khái niệm này. Đã thêm cột `row_seq bigserial` (tự tăng, không đổi sau khi ghi — an toàn hơn dùng `last_updated_at` vì cột đó có thể bị `trigger_pollDiecast_` cập nhật nhầm cho dòng cũ).
+  - `supabase/migration_phase4_step3_ca_hien_tai.sql` (mới) — cột `row_seq`, hàm RPC `duc_bulk_update_actuals(updates jsonb)` (gộp N lần PATCH của `Diecast.js` polling mỗi phút thành 1 lệnh gọi, giữ đúng ngữ nghĩa version/last_updated_by='system@poll', bỏ qua êm re id_dong không còn tồn tại). **Chưa chạy trên Supabase.**
+  - `CaHienTai.js` — viết lại hoàn toàn: `trang_thai`/`ty_le_hoan_thanh` không còn lưu (trước là formula Sheet sống theo NOW()) — tính lại ở tầng đọc qua `_computeTrangThai_`/`_computeTyLeHoanThanh_` (đúng quyết định đã chọn, giống cách `ShotKhuon.js` làm với `trang_thai_khuon`). `findRowByIdDong` **giữ nguyên hợp đồng cũ** (chỉ trả về có/không tồn tại) để không phá vỡ các nơi khác đang gọi nó — thêm hàm mới `_chtFetchOne_`/`_chtFetchAll_`/`_chtFetchByShift_` cho việc lấy đầy đủ dữ liệu. Toàn bộ 13 hàm (`upsertPlan_`, `assignPairedPlan_`, `setIncidentOpen_`/Bulk, `clearIncidentOpen_`, `acquireLock_`/`releaseLock_`, `clearCaHienTai_`, `changeProduct_`, `changeProductPaired_`, `updateShiftInputs_`, `deletePlan_`, `editOpenIncident_`, `extendMachineShift_`) đã chuyển, giữ nguyên validate/rẽ nhánh/chuỗi gọi IPQC-shot-master data.
+  - `Diecast.js` (`updateAllActuals_`, trigger mỗi phút) — đổi sang `_chtFetchAll_()` + RPC `duc_bulk_update_actuals`. Giữ nguyên `tryLock` (bỏ qua nếu bận, không đợi như các hàm khác).
+  - `IpqcCheckpoint.js` — `requestIpqcCheck_`, `_scanAndCreateDinhKyCheckpoints_`, `submitIpqcCheck_` (phần liên kết ngược `Ca_hien_tai`), `_getActiveIdDongSet_` (dùng `row_seq`), `_closeF1IncidentIfOpen_` (đổi tham số từ `rowIndex/rowData` sang `chtRow` object) — đều đã chuyển. Phần ghi `IPQC_Checkpoint`/`Van_De_Khuon` (qua `reportMoldIssue_` đã chuyển từ bước con 1) giữ nguyên không đổi thêm.
+  - `BanGhiSuCo.js` (`resolveIncident_`) — đổi phần đọc `Ca_hien_tai` sang `_chtFetchOne_`, giữ nguyên `splitIncidentByShift_` và toàn bộ logic chia đoạn qua ca. Ghi `BanGhi_SuCo` vẫn qua Sheet (chưa migrate — không phải vấn đề, đây vốn đã là 2 lệnh ghi tách rời không transaction trong bản gốc).
+  - `Ncp.js` (`getAvailableNgCheckpointsForNcp_`) — đổi 1 chỗ đọc `so_khuon` sang `_chtFetchOne_`.
+  - `BaoCao.js` (`endShift_`, khối carry-over) — đổi `appendRow`/`setFormula` sang `sbInsert`/`sbUpdate`, bỏ formula (tính ở tầng đọc).
+  - **Chưa deploy** — cần: (1) chạy `migration_phase4_step3_ca_hien_tai.sql`, (2) `SUPABASE_SERVICE_ROLE_KEY` đã set từ bước con 1 (dùng chung 1 project Dashboard Đúc), (3) `clasp push`, (4) **khuyến nghị tạo deployment TEST riêng** (khác URL `/exec` production đang chạy thật trên xưởng) để thử trước khi trỏ traffic thật sang — đây là khối rủi ro cao nhất trong toàn bộ migrate, cần test kỹ từng luồng (lưu KH, mở/đóng sự cố, đổi SP, khuôn kép, tăng ca, kết ca có carry-over, IPQC scan định kỳ, poll Diecast) trước khi coi là xong.
+
+**Bước con 2/7 (In tem công đoạn Đúc) — CODE XONG, CHƯA DEPLOY (2026-08-13)**:
+  - `supabase/migration_phase4_step2_intem.sql` (mới, repo `Dashboard_SL_CL`) — bảng đếm `duc_tag_no_counter` (đếm riêng theo từng prefix+ngày, đúng hành vi `TKD`/`D-TKD` cũ), hàm `duc_next_tag_no(p_loai_sp)`, `duc_ghi_tem(...)` (gói sinh TagNo + insert `duc_tem` trong 1 transaction). **Chưa chạy trên Supabase.**
+  - `D:\Project\MES\Intem QR\Supabase.js` (**mới**) — helper riêng cho project này (project Apps Script khác với Dashboard Đúc nên không share code được, phải có bản riêng): `sbSelect`/`sbUpdate`/`sbDelete`/`sbRpc`.
+  - `D:\Project\MES\Intem QR\Code.gs` — `WA_InTem` gọi RPC `duc_ghi_tem` thay `_genTagNo`+`_ghiDUC` (đã xoá 2 hàm này, không còn dùng); `WA_FindTem`/`WA_ReprintTem` đổi sang `sbSelect` với filter `ilike` (giữ đúng hành vi so khớp không phân biệt hoa/thường của bản cũ); `WA_UpdateTem`/`WA_DeleteTem` đổi sang `sbUpdate`/`sbDelete`. `WA_LoadMaster` **CỐ Ý giữ nguyên đọc trực tiếp KHSX Master qua `SpreadsheetApp`** — đây là master data đọc dùng chung giữa 4 hệ thống (Đúc/In tem/Chuyển công đoạn/NVL), chưa gộp về Supabase (việc gộp master data là hạng mục riêng ở mục 7 của kế hoạch, không thuộc phạm vi "ghi của In tem").
+  - **Chưa deploy** — cần: (1) chạy `migration_phase4_step2_intem.sql` trong Supabase SQL Editor, (2) set `SUPABASE_SERVICE_ROLE_KEY` vào Script Properties của project Intem QR, (3) `clasp push`, (4) test in tem thật (in mới, tra cứu, in lại, sửa, xoá) — đối chiếu `duc_tem` trên Supabase.
+  - **Việc cần làm tiếp theo trong Phase 4**: bước con 3 (`changeProduct_`/`changeProductPaired_`, cả khối `Ca_hien_tai` — bước rủi ro cao hơn hẳn 2 bước trước, cần cẩn thận).
+
+**Phase 5 — Tồn kho NVL**: chưa bắt đầu (chặn bởi 0.1).
+
+**✅ 2026-08-14 — Bước con 1 + 2 + 3 (Dashboard Đúc + Intem QR) đã TEST OK trên deployment test**: gán kế hoạch, mở/đóng sự cố, tạo tem QR (qua Intem QR test link `AKfycbx2vXn6uR-dCJUl13poYI2bLbE9U829_dmV9jW0qhbrO-QZlexDc-GeXEevHVPhXw33`), sản lượng TT ca tự động cập nhật (trigger `trigger_pollDiecast_` chạy đúng), trigger `trigger_ipqcScanDinhKy_` hết báo đỏ. Dashboard Đúc test link: `AKfycbzIFpN4B9pNYLwJdyzXo0NtzO_QaeBthBTRR8r4hMKDrGRpcAJhQi8mjraqgLLKnwh05Q` (@79). **Chưa chuyển deployment production sang bản mới** — vẫn đang dùng link test song song, link production cũ (Sheet) chưa đổi.
+
+**Các lỗi đã gặp và cách sửa trong quá trình test (ghi lại để không lặp lại)**:
+1. `.claspignore` kiểu allowlist trong Dashboard Đúc bỏ sót file `Supabase.js` mới tạo → phải thêm `!Supabase.js` mới push được.
+2. Key `sb_secret_...` (Supabase key thế hệ mới) bị chặn khi gọi qua `UrlFetchApp` (lỗi 401 "Forbidden use of secret API key in browser") — phải đổi sang key `service_role` kiểu CŨ (JWT, `eyJ...`) lấy từ mục "Legacy API keys" trong Settings → API.
+3. Intem QR cần khai báo `oauthScopes` (bao gồm `script.external_request`) trong `appsscript.json` + người deploy phải tự chạy 1 hàm trong Editor để cấp quyền lại (bước bảo mật của Google, không tự động qua clasp được).
+4. `Diecast.js` (`getDiecastData`) ban đầu vẫn đọc sheet "DUC" cũ — phát hiện qua test thật ("tạo tem OK nhưng sản lượng không cập nhật") — đã sửa sang đọc `duc_tem` trên Supabase (đúng 4 cột: ma_sp/ngay_gio_in/so_luong_tt/may_tt).
+5. `trigger_pollDiecast_`/`trigger_ipqcScanDinhKy_` báo đỏ (Executions) → do file `migration_phase4_step3_ca_hien_tai.sql` (cột `row_seq` + RPC `duc_bulk_update_actuals`) ban đầu chưa chạy trên Supabase — chạy xong hết đỏ.
+6. **Quan trọng**: `clasp push` cập nhật ngay lập tức mọi **trigger chạy theo thời gian** (`ScriptApp.newTrigger`, không gắn với deployment cụ thể) — khác với Web App URL (mỗi deployment có source cố định riêng). Nghĩa là từ lúc push, các trigger nền ĐÃ chạy code mới dù chưa đổi deployment production — may mắn là các trigger này (poll Diecast, IPQC scan định kỳ) chỉ đọc/ghi Supabase, không đụng lại Sheet gốc, nên không làm hỏng dữ liệu Sheet đang phục vụ production thật.
+
+Checklist deploy dưới đây (mục cũ) coi như bước 1/3/4 đã xong; giữ lại để tham khảo lịch sử.
+
+### Checklist deploy/test (việc của user, trước khi AI làm tiếp)
+
+**1. Chuyển công đoạn (Phase 3)** — cần scriptId (chưa có `.clasp.json`):
+   - Chạy `supabase/migration_phase3_chuyencongdoan.sql` trong Supabase SQL Editor.
+   - Lấy `scriptId` từ Apps Script Editor của Web App "Chuyển công đoạn" → `clasp clone <scriptId>`.
+   - Set `SUPABASE_SERVICE_ROLE_KEY` vào Script Properties.
+   - `clasp push`, deploy, test quét QR thật + luồng xác nhận (sheet "Theo dõi chuyển công đoạn" — set Script Properties ở CẢ project này nữa, đây là 2 project riêng).
+
+**2. In tem (Phase 4 bước con 2)** — Dashboard Đúc/Intem QR đã có `.clasp.json` sẵn:
+   - Chạy `supabase/migration_phase4_step2_intem.sql`.
+   - Set `SUPABASE_SERVICE_ROLE_KEY` vào Script Properties của project **Intem QR**.
+   - `cd "D:\Project\MES\Intem QR" && clasp push`, deploy, test in tem/tra cứu/in lại/sửa/xoá.
+
+**3. Đúc bước con 1 (Shot_Khuon/Shot_May/TangCa_Log/Van_De_Khuon)** — cùng project Dashboard Đúc:
+   - Set `SUPABASE_SERVICE_ROLE_KEY` vào Script Properties của project **Dashboard Đúc** (dùng chung cho bước con 1 + 3).
+   - `cd "D:\Project\MES\Dashboard Đúc" && clasp push` (sẽ đẩy luôn cả bước con 3 vì cùng project — không tách được).
+
+**4. Đúc bước con 3 (khối Ca_hien_tai)** — RỦI RO CAO NHẤT, cần cẩn thận:
+   - Chạy `supabase/migration_phase4_step3_ca_hien_tai.sql`.
+   - Cùng lần `clasp push` ở mục 3 (không tách deploy được vì chung project).
+   - **Khuyến nghị**: tạo 1 bản deploy MỚI (Deploy → Manage deployments → New deployment) thay vì ghi đè deployment production đang chạy thật trên xưởng — lấy URL test riêng, tự thao tác thử: lưu kế hoạch, mở/đóng sự cố, đổi SP (cả khuôn kép), tăng ca, kết ca (carry-over sang ca sau), để 1 lúc xem `trigger_pollDiecast_`/`trigger_ipqcScanDinhKy_` có chạy đúng không. Chỉ khi ổn mới trỏ deployment production sang bản mới.
+   - Đối chiếu số liệu Supabase (`duc_ca_hien_tai`, `duc_tangca_log`) với kỳ vọng thực tế.
+
+**Việc cần làm ngay tiếp theo (khi quay lại với AI)**: sau khi user deploy/test xong 4 mục trên và xác nhận ổn, tiếp tục bước con 4 (chuỗi IPQC checkpoint đầy đủ: `requestIpqcCheck_`/`submitIpqcCheck_` viết thành RPC transaction) → bước con 5 (`resolveIncident_` RPC) → bước con 6 (`Ncp.js`) → bước con 7 (còn lại) → Phase 5 (NVL). Nếu deploy/test phát hiện lỗi ở phần đã làm, báo lại để sửa trước khi làm tiếp, không nên chồng thêm việc mới lên nền chưa xác nhận đúng.
+
+---
+
+## 12. Giai đoạn bỏ hẳn Google (Apps Script + Drive + Docs) — chuyển sang web tĩnh tại mes.toyotaki.vn
+
+> **Quyết định lớn 2026-08-14**: sau khi so sánh tốc độ, người dùng chọn đi thẳng tới kiến trúc cuối — không chỉ đổi database (mục 1-11 ở trên) mà bỏ hẳn Google Apps Script (cả business logic lẫn giao diện), Google Drive, Google Docs. Chi tiết kế hoạch đầy đủ lưu ở `C:\Users\DELL\.claude\plans\indexed-hugging-candle.md` (máy thực hiện) — mục này là bản tóm tắt + tiến độ để tiếp tục giữa các phiên.
+
+**Quyết định đã chốt**:
+- Thêm đăng nhập (Supabase Auth, email/mật khẩu) — bắt buộc vì web tĩnh gọi thẳng Supabase sẽ lộ URL/anon key ra trình duyệt, không có Apps Script làm cổng chặn như trước.
+- Báo cáo kết ca: bỏ Google Docs, đổi sang HTML/CSS + xuất PDF bằng tính năng in của trình duyệt.
+- Thứ tự module: giữ nguyên (Sản lượng → Chất lượng → Chuyển công đoạn → Đúc+IPQC+In tem → NVL).
+- Mỗi module: giữ Apps Script cũ chạy song song vài ngày/tuần sau khi trang tĩnh thay thế test OK, rồi mới tắt hẳn (không cắt ngay).
+- DNS `mes.toyotaki.vn`: chưa có quyền — tạm dùng link GitHub Pages mặc định, đổi domain sau.
+- Danh sách nhân viên cần tài khoản: chưa cung cấp — làm nền tảng Auth trước bằng tài khoản test, hỏi danh sách thật khi cần tạo tài khoản hàng loạt.
+
+**Tiến độ Giai đoạn 0 (nền tảng dùng chung)**:
+- [x] `supabase/migration_phase_D0_foundation.sql` (mới) — tạo Storage bucket `ipqc-evidence`/`report-files` (thay Drive), RLS đọc công khai/ghi cần đăng nhập, bật extension `pg_cron` (thay trigger Apps Script). **Chưa chạy trên Supabase.**
+- [x] `shared/supabase-client.js` (mới) — khởi tạo `supabase-js` client dùng chung, `MesAuth.requireAuth()`/`signOut()`/`getCurrentUserEmail()`.
+- [x] `shared/login.html` (mới) — trang đăng nhập dùng chung, tự chuyển hướng về `returnTo` sau khi đăng nhập.
+- [ ] Chưa thiết kế CSS/layout khung dùng chung (tái dùng phong cách `sanluong.html`/`chatluong.html`).
+- [ ] Chưa thiết kế template báo cáo kết ca HTML/CSS thay Google Docs.
+- [ ] Chưa cấu hình domain `mes.toyotaki.vn` (chờ DNS).
+
+**✅ Giai đoạn 1 (Sản lượng) — CODE XONG, CHƯA TEST (2026-08-14)**:
+- `sanluong-supabase.html` — bỏ khai báo `SUPABASE_URL`/`SUPABASE_ANON_KEY`/`APPS_SCRIPT_URL` riêng, dùng chung `shared/supabase-client.js` (nhúng qua `<script src="shared/supabase-client.js">`, đặt trước bởi CDN `@supabase/supabase-js`). `saveComment()` viết lại: gọi `sb.from('sl_comments').upsert(...)` thẳng, nếu chưa đăng nhập thì lưu tạm nội dung đang gõ vào `localStorage` rồi chuyển sang `shared/login.html` (khôi phục lại khi quay về, không mất nội dung). Thêm chỉ báo đăng nhập góc trên phải (email + nút Đăng xuất, hoặc link Đăng nhập).
+- `supabase/migration_phase_D1_sanluong_write.sql` (mới) — RLS cho phép INSERT/UPDATE `sl_comments` khi `auth.role() = 'authenticated'`. **Chưa chạy trên Supabase.**
+- **Lưu ý cấu trúc file quan trọng**: `shared/supabase-client.js` dùng đường dẫn tương đối `shared/login.html` (không có `../`) — điều này đúng vì mọi trang module hiện đang nằm phẳng ở gốc repo (không có thư mục con). Nếu sau này tạo trang mới trong thư mục con, phải tự điều chỉnh đường dẫn.
+- **Việc cần làm để test**: (1) chạy `migration_phase_D1_sanluong_write.sql`, (2) đăng nhập bằng tài khoản test đã tạo, (3) mở `sanluong-supabase.html`, thử lưu 1 comment, xác nhận thấy trong bảng `sl_comments` trên Supabase.
+
+**Việc cần làm tiếp theo (đang làm dở — 2026-08-14)**:
+1. **User cần làm**: chạy `migration_phase_D0_foundation.sql` trong Supabase SQL Editor; tạo 1 tài khoản test qua Supabase Dashboard → Authentication → Users → Add user (email/mật khẩu bất kỳ) để thử đăng nhập.
+2. **AI đang làm — Giai đoạn 1 (Sản lượng)**: đích đến là sửa `sanluong-supabase.html` (file đã có sẵn từ trước, đang đọc Supabase nhưng phần ghi comment vẫn gọi `APPS_SCRIPT_URL` cũ) để: (a) thêm `MesAuth.requireAuth()` ở đầu trang hoặc chỉ chặn khi bấm nút lưu comment (cân nhắc UX — có thể KHÔNG bắt đăng nhập để xem, chỉ bắt khi ghi), (b) đổi `saveComment()` từ `fetch(APPS_SCRIPT_URL, ...)` sang gọi thẳng Supabase REST/`supabase-js` lên bảng `sl_comments`, (c) cần thêm RLS policy INSERT/UPDATE cho `sl_comments` (hiện chỉ có policy đọc — xem `supabase/schema_sanluong.sql` dòng 74-81, chưa có policy ghi) — sẽ viết trong 1 file migration mới `migration_phase_D1_sanluong_write.sql`.
+3. Sau khi xong Sản lượng, làm tương tự cho Chất lượng (`chatluong-supabase.html`, bảng `cl_comments`), rồi mới sang Chuyển công đoạn/Đúc/NVL theo đúng thứ tự đã chốt.
+4. **Lưu ý quan trọng cho các bước ghi RLS sau này**: pattern chuẩn là `for insert/update with check (auth.role() = 'authenticated')` — xem ví dụ đã viết trong `migration_phase_D0_foundation.sql` (phần Storage policies) để theo đúng mẫu.
+
+---
+
+**Việc cần làm ngay tiếp theo (lịch sử, đã gộp vào checklist trên)**:
+1. Nhận 3 `scriptId` còn thiếu từ user (mục 11.3) → `clasp clone` → set Script Properties → `clasp push` + deploy bản test cho Phase 3, test quét thật.
+2. Chạy `supabase/migration_phase3_chuyencongdoan.sql` trong Supabase SQL Editor (độc lập, không cần chờ scriptId — có thể làm ngay).
+3. Trong lúc chờ, có thể tiếp tục soạn code Phase 1 (Sản lượng) một khi xác định được project comment-backend, hoặc bắt đầu Phase 4 bước con đầu tiên (không bị chặn scriptId).

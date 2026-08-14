@@ -371,24 +371,21 @@
         <li>Upload file mẫu <code>TOYOTAKI_Dashboard_DuLieu.xlsx</code> lên Google Drive, mở bằng Google Sheets (File → Save as Google Sheets).</li>
         <li>Cập nhật số liệu các tháng tiếp theo trực tiếp trong Sheet (tab GiaoHang, KHSX, Capacity, Forecast) và nội dung comment trong tab Comments.</li>
         <li>Vào <b>File → Share → Publish to web</b>. Ở mục đầu tiên chọn từng tab (không chọn "Toàn bộ tài liệu"), định dạng chọn <b>CSV</b>, bấm Publish. Lặp lại cho cả 6 tab: GiaoHang, KHSX, Capacity, Forecast, Comments, Config.</li>
-        <li><b>Bản này (sanluong-supabase.html) không dùng CSV_URLS</b> — đây là bản thử nghiệm đọc từ Supabase, điền <code>SUPABASE_URL</code>/<code>SUPABASE_ANON_KEY</code> ở đầu thẻ <code>&lt;script&gt;</code> thay vì đường link CSV. Dashboard gốc <code>sanluong.html</code> vẫn dùng CSV_URLS như hướng dẫn dưới đây.</li>
+        <li><b>Trang này đọc/ghi thẳng Supabase</b> (cấu hình chung trong <code>shared/supabase-client.js</code>) — không còn phụ thuộc CSV_URLS/Google Sheet như bản <code>sanluong.html</code> gốc trước đây.</li>
         <li>Lưu file, upload file HTML này lên GitHub Pages (hoặc Google Sites / Netlify) để có link truy cập từ mọi thiết bị có internet.</li>
         <li>Dashboard sẽ tự động tải lại dữ liệu mỗi 5 phút, hoặc bấm nút "🔄 Làm mới" để cập nhật ngay lập tức.</li>
       </ol>
-      <p>Lưu ý: các ô ghi chú (comment) hiển thị nội dung từ tab <b>Comments</b> trong Google Sheet. Bấm nút <b>"💾 Lưu dữ liệu"</b> dưới mỗi ô để ghi thẳng vào Sheet (cần cấu hình <code>APPS_SCRIPT_URL</code> — xem file <code>AppsScript_Comments_Backend.gs.txt</code> đi kèm). Nếu chưa cấu hình, nội dung gõ vào chỉ lưu tạm trong trình duyệt của bạn.</p>
+      <p>Lưu ý: các ô ghi chú (comment) đọc/ghi thẳng bảng <code>sl_comments</code> trên Supabase — không còn qua Google Sheet/Apps Script. Bấm nút <b>"💾 Lưu dữ liệu"</b> dưới mỗi ô để lưu; nếu chưa đăng nhập, trang sẽ tự chuyển sang màn hình đăng nhập (nội dung đang gõ được giữ lại, không mất).</p>
     </div>
   </details>
 
   <details class="setup-guide">
-    <summary>Cách bật tính năng "Lưu comment vào Google Sheet"</summary>
+    <summary>Cách đăng nhập để lưu comment</summary>
     <div class="guide-body">
       <ol>
-        <li>Mở Google Sheet dữ liệu dashboard → menu <b>Extensions → Apps Script</b>.</li>
-        <li>Dán nội dung file <code>AppsScript_Comments_Backend.gs.txt</code> vào (xoá code mẫu cũ trước).</li>
-        <li>Bấm <b>Deploy → New deployment</b> → chọn loại <b>Web app</b> → Execute as: <b>Me</b> → Who has access: <b>Anyone</b> → Deploy.</li>
-        <li>Cấp quyền khi được hỏi (chọn tài khoản Google → Advanced → Go to ... (unsafe) → Allow).</li>
-        <li>Copy link dạng <code>https://script.google.com/macros/s/.../exec</code>, dán vào biến <code>APPS_SCRIPT_URL</code> ở đầu file <code>sanluong.html</code> (mở bằng trình soạn thảo văn bản).</li>
-        <li>Lưu file, upload lại lên GitHub Pages. Giờ mỗi ô comment sẽ có nút "💾 Lưu dữ liệu" hoạt động thật.</li>
+        <li>Bấm liên kết "Đăng nhập" ở góc trên bên phải màn hình.</li>
+        <li>Nhập email/mật khẩu tài khoản đã được cấp (liên hệ quản trị hệ thống nếu chưa có tài khoản).</li>
+        <li>Sau khi đăng nhập, trang tự quay lại dashboard — nút "💾 Lưu dữ liệu" sẽ hoạt động.</li>
       </ol>
     </div>
   </details>
@@ -400,6 +397,8 @@
 
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="shared/supabase-client.js"></script>
 <script>
 /*!
  * Chart.js v4.4.4
@@ -422,15 +421,10 @@
    CONFIG — bản đọc dữ liệu từ Supabase (thay cho CSV Google Sheet). Đây là
    trang THỬ NGHIỆM song song, không thay thế sanluong.html gốc — chỉ dùng
    để đối chiếu số liệu trước khi cutover chính thức.
-   Điền Project URL + anon public key lấy ở Supabase → Settings → API.
+   SUPABASE_URL/SUPABASE_ANON_KEY/sb đã khai báo sẵn trong shared/supabase-client.js
+   (nhúng trước file này) — dùng chung, không khai báo lại ở đây.
    ========================================================================= */
-const SUPABASE_URL = 'https://fgghikpzcxjqzahfiiil.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_WWugFHNNGGQPWZRsMxGyVA_YpsL4v3v';
 const AUTO_REFRESH_MS = 5 * 60 * 1000; // 5 minutes
-
-/* Web App URL from the Apps Script backend (see AppsScript_Comments_Backend.gs.txt) —
-   lets the dashboard SAVE comments back into the Comments tab, not just read them. */
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz-vAFxrBA1rqTgihCsbMw0b7ibBIM3wY4WkJl-HGXrHH7igXjgkdmeCFf6FjHcLyeYNw/exec';
 /* ========================================================================= */
 
 const monthsShort = ['T1','T2','T3','T4','T5','T6'];
@@ -933,33 +927,33 @@ async function loadData(){
   }
 }
 
-/* ---------- Save comments back to the Google Sheet (Apps Script Web App) ---------- */
-function isAppsScriptConfigured(){
-  return APPS_SCRIPT_URL && !APPS_SCRIPT_URL.startsWith('PASTE_');
-}
+/* ---------- Save comments straight to Supabase (bảng sl_comments, cần đăng nhập) ---------- */
 async function saveComment(key, text, btnEl, statusEl){
-  if (!isAppsScriptConfigured()){
-    statusEl.textContent = '⚠️ Chưa cấu hình APPS_SCRIPT_URL trong file HTML';
+  const session = await MesAuth.getSession();
+  if (!session){
+    // Lưu tạm nội dung đang gõ để không mất khi quay lại sau khi đăng nhập.
+    try { localStorage.setItem('mes_draft_comment_' + key, text); } catch(e){}
+    statusEl.textContent = '⚠️ Cần đăng nhập trước khi lưu — đang chuyển sang trang đăng nhập…';
     statusEl.className = 'save-status err';
+    setTimeout(() => { window.location.href = 'shared/login.html?returnTo=' + encodeURIComponent(window.location.href); }, 1200);
     return;
   }
+
   btnEl.disabled = true;
   statusEl.textContent = 'Đang lưu…';
   statusEl.className = 'save-status';
   try {
-    // text/plain avoids a CORS preflight (Apps Script web apps don't handle OPTIONS)
-    const res = await fetch(APPS_SCRIPT_URL, {
-      method: 'POST',
-      headers: {'Content-Type': 'text/plain;charset=utf-8'},
-      body: JSON.stringify({key, noiDung: escapeForSheet(text)})
-    });
-    const json = await res.json();
-    if (json.ok){
+    const { error } = await sb.from('sl_comments').upsert(
+      { key: key, noi_dung: escapeForSheet(text), updated_at: new Date().toISOString() },
+      { onConflict: 'key' }
+    );
+    if (!error){
       savedRecently[key] = Date.now();
       statusEl.textContent = '✓ Đã lưu lúc ' + nowStr();
       statusEl.className = 'save-status ok';
+      try { localStorage.removeItem('mes_draft_comment_' + key); } catch(e){}
     } else {
-      statusEl.textContent = '❌ Lỗi: ' + (json.error || 'không rõ nguyên nhân');
+      statusEl.textContent = '❌ Lỗi: ' + error.message;
       statusEl.className = 'save-status err';
     }
   } catch(err){
@@ -975,6 +969,11 @@ async function saveComment(key, text, btnEl, statusEl){
 document.querySelectorAll('textarea.comment-edit[id^="cmt-"]').forEach(ta => {
   const el = upgradeCommentTextareaToRich(ta);
   const key = el.id.replace(/^cmt-/, '');
+  // Khôi phục nội dung đang gõ dở nếu vừa bị chuyển sang trang đăng nhập lúc bấm Lưu.
+  try {
+    const draft = localStorage.getItem('mes_draft_comment_' + key);
+    if (draft) el.innerHTML = unescapeForSheet(draft).replace(/\n/g, '<br>');
+  } catch(e){}
   const row = document.createElement('div');
   row.className = 'comment-save-row';
   row.innerHTML = `<button type="button" class="save-btn">💾 Lưu dữ liệu</button><span class="save-status"></span>`;
@@ -983,6 +982,20 @@ document.querySelectorAll('textarea.comment-edit[id^="cmt-"]').forEach(ta => {
   const status = row.querySelector('.save-status');
   btn.addEventListener('click', () => saveComment(key, el.innerHTML, btn, status));
 });
+
+/* ---------- Chỉ báo đăng nhập (góc trên) ---------- */
+(async function initAuthStatus(){
+  const bar = document.createElement('div');
+  bar.style.cssText = 'position:fixed;top:8px;right:8px;z-index:9999;font-size:12px;background:#fff;border:1px solid #E4DACB;border-radius:6px;padding:4px 10px;box-shadow:0 2px 6px rgba(0,0,0,.08);color:#5c5044;';
+  document.body.appendChild(bar);
+  const email = await MesAuth.getCurrentUserEmail();
+  if (email){
+    bar.innerHTML = `👤 ${email} · <a href="#" id="mesSignOut" style="color:#C87941;">Đăng xuất</a>`;
+    document.getElementById('mesSignOut').addEventListener('click', (e) => { e.preventDefault(); MesAuth.signOut(); });
+  } else {
+    bar.innerHTML = `<a href="shared/login.html" style="color:#C87941;">Đăng nhập</a>`;
+  }
+})();
 
 /* ---------- Tab switching ---------- */
 document.querySelectorAll('.tab-btn').forEach(btn=>{
