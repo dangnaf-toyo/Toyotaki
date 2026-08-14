@@ -460,7 +460,16 @@ Checklist deploy dưới đây (mục cũ) coi như bước 1/3/4 đã xong; gi�
    - **Khuyến nghị**: tạo 1 bản deploy MỚI (Deploy → Manage deployments → New deployment) thay vì ghi đè deployment production đang chạy thật trên xưởng — lấy URL test riêng, tự thao tác thử: lưu kế hoạch, mở/đóng sự cố, đổi SP (cả khuôn kép), tăng ca, kết ca (carry-over sang ca sau), để 1 lúc xem `trigger_pollDiecast_`/`trigger_ipqcScanDinhKy_` có chạy đúng không. Chỉ khi ổn mới trỏ deployment production sang bản mới.
    - Đối chiếu số liệu Supabase (`duc_ca_hien_tai`, `duc_tangca_log`) với kỳ vọng thực tế.
 
-**Việc cần làm ngay tiếp theo (khi quay lại với AI)**: sau khi user deploy/test xong 4 mục trên và xác nhận ổn, tiếp tục bước con 4 (chuỗi IPQC checkpoint đầy đủ: `requestIpqcCheck_`/`submitIpqcCheck_` viết thành RPC transaction) → bước con 5 (`resolveIncident_` RPC) → bước con 6 (`Ncp.js`) → bước con 7 (còn lại) → Phase 5 (NVL). Nếu deploy/test phát hiện lỗi ở phần đã làm, báo lại để sửa trước khi làm tiếp, không nên chồng thêm việc mới lên nền chưa xác nhận đúng.
+**✅ Bước con 4 (chuỗi IPQC checkpoint đầy đủ) — CODE XONG, CHƯA TEST (2026-08-14)**:
+- `supabase/migration_phase4_step4_ipqc_checkpoint.sql` (mới) — viết lại toàn bộ chuỗi `requestIpqcCheck_`/`submitIpqcCheck_`/`_closeF1IncidentIfOpen_` (IpqcCheckpoint.js) thành RPC Postgres, gọi được thẳng từ trình duyệt (không qua Apps Script): `duc_request_ipqc_check`, `duc_submit_ipqc_check`, cùng các hàm nội bộ dùng chung `duc_set_incident_open`/`duc_clear_incident_open` (CaHienTai.js), `duc_report_mold_issue` (VanDeKhuon.js), `duc_close_f1_incident_if_open`, `duc_build_ipqc_issue_text`, `duc_normalize_name` (thay `normalizeMachineName`, dùng extension `unaccent`).
+- **Ảnh bằng chứng IPQC**: KHÔNG upload trong SQL — thiết kế là trình duyệt tự upload lên Supabase Storage bucket `ipqc-evidence` (đã tạo ở D0) TRƯỚC, lấy URL, rồi truyền mảng URL vào `duc_submit_ipqc_check` qua `p_anh_urls` (thay `_uploadIpqcEvidence_` ghi Google Drive).
+- **Đơn giản hoá có chủ đích**: `duc_report_mold_issue` khi gọi từ chuỗi IPQC submit dùng thẳng `ngay`/`ca` của dòng `Ca_hien_tai` liên quan, thay vì tự "đoán" ca hiện tại theo giờ đồng hồ như bản cũ (`detectCurrentShift()`) — chính xác hơn về ngữ cảnh nghiệp vụ.
+- **CHƯA THỂ TEST** vì chưa có giao diện (frontend Đúc) gọi tới các RPC này — cần bạn chạy file SQL trước (để không có lỗi cú pháp) nhưng việc test đầy đủ luồng phải chờ tới khi có trang tĩnh.
+
+**Việc cần làm ngay tiếp theo (khi quay lại với AI)**:
+1. **User**: chạy `migration_phase4_step4_ipqc_checkpoint.sql` trong Supabase SQL Editor — ít nhất để xác nhận không lỗi cú pháp (test chức năng thật sẽ chờ có UI).
+2. **AI**: tiếp tục bước con 5 (`resolveIncident_` RPC — phức tạp nhất còn lại, có logic chia đoạn sự cố qua nhiều ca `splitIncidentByShift_`, cần viết lại tính toán khung giờ ca trong SQL) → bước con 6 (`Ncp.js`, 10 hàm) → bước con 7 (còn lại: BaoCao.js/BaoCaoTuan.js/Diecast.js/saveTieuChuan_) → **sau đó mới bắt đầu viết giao diện tĩnh thay `Index.html`/`Ipqc.html`/`QcManager.html`/`Mobile.html`** (khối lớn nhất, ~150 điểm gọi, nên làm riêng từng màn hình, có thể cần nhiều phiên làm việc).
+3. Nếu deploy/test phát hiện lỗi ở phần đã làm, báo lại để sửa trước khi làm tiếp, không nên chồng thêm việc mới lên nền chưa xác nhận đúng.
 
 ---
 
@@ -496,7 +505,9 @@ Checklist deploy dưới đây (mục cũ) coi như bước 1/3/4 đã xong; gi�
 
 **✅ Giai đoạn 3 (Chuyển công đoạn) — TEST OK TOÀN BỘ (2026-08-14)**: quét QR (camera trực tiếp, đã nâng cấp từ chụp ảnh tĩnh — xem lịch sử bên dưới), điền form, ghi vào `cd_chuyen_cong_doan_log` — xác nhận đúng trên Supabase thật. Module này coi như đã bỏ hẳn Google (không còn phụ thuộc Apps Script cho luồng quét/ghi chính).
 
-**✅ Đã thêm nút "Từ chối" cho mỗi phiếu** (kèm ô nhập lý do bắt buộc) — `supabase/migration_phase_D3b_chuyencongdoan_tuchoi.sql` (mới): thêm cột `ly_do_tu_choi`, RPC `cd_tu_choi_chuyen` (set trạng thái 'Đã từ chối' + lưu lý do + người/giờ từ chối), đã revoke anon/grant authenticated theo đúng pattern. **CHƯA TEST.**
+**✅ Đã thêm nút "Từ chối" cho mỗi phiếu — TEST OK (2026-08-14)** (kèm ô nhập lý do bắt buộc) — `supabase/migration_phase_D3b_chuyencongdoan_tuchoi.sql`: cột `ly_do_tu_choi`, RPC `cd_tu_choi_chuyen`, đã revoke anon/grant authenticated. Xác nhận trạng thái + lý do lưu đúng trên Supabase.
+
+**🎉 GIAI ĐOẠN 3 (CHUYỂN CÔNG ĐOẠN) HOÀN TẤT 100%** — quét QR (camera live), ghi log, xác nhận từng phiếu/xác nhận tất cả, từ chối kèm lý do — toàn bộ chạy thẳng Supabase, không còn phụ thuộc Google ở module này. Apps Script cũ (`WebApp/ChuyenCongDoan.gs` + `XacNhan/XacNhanChuyenCongDoan.gs`) giữ chạy song song theo quyết định chung, có thể tắt bất cứ lúc nào user thấy yên tâm.
 
 **✅ Đã gộp luồng "Xác nhận nhận hàng" vào `chuyencongdoan.html`** (quyết định: gộp chung, không tách trang riêng) — thêm tab "✅ Xác nhận nhận hàng": chọn bộ phận → hiện danh sách phiếu đang chờ (đọc `cd_chuyen_cong_doan_log` lọc `cong_doan_giao` + `trang_thai_xac_nhan`) → bấm xác nhận từng phiếu → gọi RPC `cd_xac_nhan_chuyen`. **CHƯA TEST.** `XacNhanChuyenCongDoan.gs` (Apps Script cũ, gắn Sheet) giữ chạy song song theo quyết định chung, tắt sau khi xác nhận trang mới ổn.
 
