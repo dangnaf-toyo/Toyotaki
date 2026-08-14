@@ -484,17 +484,19 @@ Checklist deploy dưới đây (mục cũ) coi như bước 1/3/4 đã xong; gi�
 - [ ] Chưa thiết kế template báo cáo kết ca HTML/CSS thay Google Docs.
 - [ ] Chưa cấu hình domain `mes.toyotaki.vn` (chờ DNS).
 
-**✅ Giai đoạn 1 (Sản lượng) — CODE XONG, CHƯA TEST (2026-08-14)**:
+**✅ Giai đoạn 1 (Sản lượng) — TEST OK (2026-08-14)**: đăng nhập qua `shared/login.html` + lưu comment thẳng Supabase đã xác nhận hoạt động đúng trên link GitHub Pages thật. Đã commit+push (`5e9a358`). **Apps Script comment-backend cũ của Sản lượng vẫn để chạy song song theo quyết định đã chốt** (tắt sau vài ngày/tuần, không cắt ngay) — nhưng trang `sanluong-supabase.html` giờ không gọi tới nó nữa; nếu muốn tắt sớm hơn, có thể làm bất cứ lúc nào vì không còn phụ thuộc.
 - `sanluong-supabase.html` — bỏ khai báo `SUPABASE_URL`/`SUPABASE_ANON_KEY`/`APPS_SCRIPT_URL` riêng, dùng chung `shared/supabase-client.js` (nhúng qua `<script src="shared/supabase-client.js">`, đặt trước bởi CDN `@supabase/supabase-js`). `saveComment()` viết lại: gọi `sb.from('sl_comments').upsert(...)` thẳng, nếu chưa đăng nhập thì lưu tạm nội dung đang gõ vào `localStorage` rồi chuyển sang `shared/login.html` (khôi phục lại khi quay về, không mất nội dung). Thêm chỉ báo đăng nhập góc trên phải (email + nút Đăng xuất, hoặc link Đăng nhập).
 - `supabase/migration_phase_D1_sanluong_write.sql` (mới) — RLS cho phép INSERT/UPDATE `sl_comments` khi `auth.role() = 'authenticated'`. **Chưa chạy trên Supabase.**
 - **Lưu ý cấu trúc file quan trọng**: `shared/supabase-client.js` dùng đường dẫn tương đối `shared/login.html` (không có `../`) — điều này đúng vì mọi trang module hiện đang nằm phẳng ở gốc repo (không có thư mục con). Nếu sau này tạo trang mới trong thư mục con, phải tự điều chỉnh đường dẫn.
 - **Việc cần làm để test**: (1) chạy `migration_phase_D1_sanluong_write.sql`, (2) đăng nhập bằng tài khoản test đã tạo, (3) mở `sanluong-supabase.html`, thử lưu 1 comment, xác nhận thấy trong bảng `sl_comments` trên Supabase.
 
-**Việc cần làm tiếp theo (đang làm dở — 2026-08-14)**:
-1. **User cần làm**: chạy `migration_phase_D0_foundation.sql` trong Supabase SQL Editor; tạo 1 tài khoản test qua Supabase Dashboard → Authentication → Users → Add user (email/mật khẩu bất kỳ) để thử đăng nhập.
-2. **AI đang làm — Giai đoạn 1 (Sản lượng)**: đích đến là sửa `sanluong-supabase.html` (file đã có sẵn từ trước, đang đọc Supabase nhưng phần ghi comment vẫn gọi `APPS_SCRIPT_URL` cũ) để: (a) thêm `MesAuth.requireAuth()` ở đầu trang hoặc chỉ chặn khi bấm nút lưu comment (cân nhắc UX — có thể KHÔNG bắt đăng nhập để xem, chỉ bắt khi ghi), (b) đổi `saveComment()` từ `fetch(APPS_SCRIPT_URL, ...)` sang gọi thẳng Supabase REST/`supabase-js` lên bảng `sl_comments`, (c) cần thêm RLS policy INSERT/UPDATE cho `sl_comments` (hiện chỉ có policy đọc — xem `supabase/schema_sanluong.sql` dòng 74-81, chưa có policy ghi) — sẽ viết trong 1 file migration mới `migration_phase_D1_sanluong_write.sql`.
-3. Sau khi xong Sản lượng, làm tương tự cho Chất lượng (`chatluong-supabase.html`, bảng `cl_comments`), rồi mới sang Chuyển công đoạn/Đúc/NVL theo đúng thứ tự đã chốt.
-4. **Lưu ý quan trọng cho các bước ghi RLS sau này**: pattern chuẩn là `for insert/update with check (auth.role() = 'authenticated')` — xem ví dụ đã viết trong `migration_phase_D0_foundation.sql` (phần Storage policies) để theo đúng mẫu.
+**✅ Giai đoạn 2 (Chất lượng) — CODE XONG, CHƯA TEST (2026-08-14)**: áp dụng đúng pattern Sản lượng cho `chatluong-supabase.html` — `saveComment()` ghi thẳng `cl_comments` (đăng nhập bắt buộc, giữ draft qua localStorage khi chuyển hướng đăng nhập), chỉ báo đăng nhập góc trên phải, bỏ `APPS_SCRIPT_URL`/`isAppsScriptConfigured`. File SQL: `supabase/migration_phase_D2_chatluong_write.sql` (RLS ghi `cl_comments`) — **chưa chạy trên Supabase**.
+
+**Việc cần làm tiếp theo**:
+1. **User**: chạy `migration_phase_D2_chatluong_write.sql`, test đăng nhập + lưu comment trên `chatluong-supabase.html` (link GitHub Pages, sau khi push).
+2. **AI**: sau khi Chất lượng test OK, sang Giai đoạn 3 (Chuyển công đoạn) — module này không có "comment", mà có ghi log chuyển công đoạn qua RPC đã có sẵn (`cd_ghi_chuyen_cong_doan`, `cd_xac_nhan_chuyen`) — cần thiết kế trang tĩnh mới hoàn toàn (chưa có bản `-supabase.html` pilot với UI quét QR), phức tạp hơn 2 module trước vì cần dùng camera quét QR trên trình duyệt (thư viện `jsQR`, đã dùng sẵn trong bản Apps Script cũ, tái dùng logic JS được).
+3. **Pattern chuẩn cho RLS ghi** (áp dụng mọi bảng comment tương tự): `for insert with check (auth.role() = 'authenticated')` + `for update using (...) with check (...)` — xem `migration_phase_D1_sanluong_write.sql`/`migration_phase_D2_chatluong_write.sql` làm mẫu.
+4. **Nhắc nhở kỹ thuật đã học được lần trước** (tránh lặp lại lỗi cho các module sau): `sb_secret_...` không dùng được cho gọi phía server (Apps Script), NHƯNG `sb_publishable_...` dùng bình thường phía trình duyệt (đúng thiết kế) — không áp dụng vấn đề đó cho các trang tĩnh mới này.
 
 ---
 
